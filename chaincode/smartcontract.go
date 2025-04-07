@@ -99,3 +99,36 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 
 	return nil
 }
+
+func (s *SmartContract) CreateProduct(ctx contractapi.TransactionContextInterface, createdAt string, description string, id string, manufacturedPlace string, name string) error {
+	exists, err := s.ProductExists(ctx, id)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return fmt.Errorf("the asset %s already exists", id)
+	}
+
+	product := Product{
+		CreatedAt:         createdAt,
+		Description:       description,
+		ID:                id,
+		ManufacturedPlace: manufacturedPlace,
+		Name:              name,
+	}
+	productJson, err := json.Marshal(product)
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(id, productJson)
+}
+
+func (s *SmartContract) ProductExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
+	productJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return false, fmt.Errorf("failed to read from world state: %v", err)
+	}
+
+	return productJSON != nil, nil
+}
