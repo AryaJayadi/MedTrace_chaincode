@@ -124,6 +124,24 @@ func (s *SmartContract) CreateProduct(ctx contractapi.TransactionContextInterfac
 	return ctx.GetStub().PutState(id, productJson)
 }
 
+func (s *SmartContract) ReadProduct(ctx contractapi.TransactionContextInterface, id string) (*Product, error) {
+	productJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from world state: %v", err)
+	}
+	if productJSON == nil {
+		return nil, fmt.Errorf("the product %s does not exist", id)
+	}
+
+	var product Product
+	err = json.Unmarshal(productJSON, &product)
+	if err != nil {
+		return nil, err
+	}
+
+	return &product, nil
+}
+
 func (s *SmartContract) ProductExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	productJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
