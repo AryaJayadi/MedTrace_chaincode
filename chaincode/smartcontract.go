@@ -165,6 +165,18 @@ func (s *SmartContract) UpdateProduct(ctx contractapi.TransactionContextInterfac
 	return ctx.GetStub().PutState(id, productJson)
 }
 
+func (s *SmartContract) DeleteProduct(ctx contractapi.TransactionContextInterface, id string) error {
+	exists, err := s.ProductExists(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("the product %s does not exist", id)
+	}
+
+	return ctx.GetStub().DelState(id)
+}
+
 func (s *SmartContract) ProductExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	productJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
