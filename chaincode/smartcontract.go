@@ -142,6 +142,29 @@ func (s *SmartContract) ReadProduct(ctx contractapi.TransactionContextInterface,
 	return &product, nil
 }
 
+func (s *SmartContract) UpdateProduct(ctx contractapi.TransactionContextInterface, description string, id string, manufacturedPlace string, name string) error {
+	exists, err := s.ProductExists(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("the product %s does not exist", id)
+	}
+
+	product := Product{
+		Description:       description,
+		ID:                id,
+		ManufacturedPlace: manufacturedPlace,
+		Name:              name,
+	}
+	productJson, err := json.Marshal(product)
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(id, productJson)
+}
+
 func (s *SmartContract) ProductExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	productJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
