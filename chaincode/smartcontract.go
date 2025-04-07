@@ -185,3 +185,30 @@ func (s *SmartContract) ProductExists(ctx contractapi.TransactionContextInterfac
 
 	return productJSON != nil, nil
 }
+
+func (s *SmartContract) GetAllProducts(ctx contractapi.TransactionContextInterface) ([]*Product, error) {
+	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+	if err != nil {
+		return nil, err
+	}
+	if err := resultsIterator.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close iterator: %v", err)
+	}
+
+	var products []*Product
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var product Product
+		err = json.Unmarshal(queryResponse.Value, &product)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, &product)
+	}
+
+	return products, nil
+}
