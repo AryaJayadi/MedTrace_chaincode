@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
 
@@ -191,9 +192,12 @@ func (s *SmartContract) GetAllProducts(ctx contractapi.TransactionContextInterfa
 	if err != nil {
 		return nil, err
 	}
-	if err := resultsIterator.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close iterator: %v", err)
-	}
+	defer func(resultsIterator shim.StateQueryIteratorInterface) {
+		err := resultsIterator.Close()
+		if err != nil {
+			fmt.Printf("failed to close iterator: %v\n", err)
+		}
+	}(resultsIterator)
 
 	var products []*Product
 	for resultsIterator.HasNext() {
