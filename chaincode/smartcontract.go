@@ -6,7 +6,6 @@ import (
 
 	"github.com/AryaJayadi/SupplyChain_chaincode/dto"
 	"github.com/AryaJayadi/SupplyChain_chaincode/model"
-	"github.com/google/uuid"
 	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
@@ -16,44 +15,7 @@ type SmartContract struct {
 }
 
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
-	drugs := []model.Drug{
-		{
-			ID:             uuid.New().String(),
-			Name:           "Aspirin",
-			Description:    "Pain reliever",
-			Manufacturer:   "ABC Pharma",
-			BatchID:        "B12345",
-			ManufacturedAt: "2025-04-07T10:00:00Z",
-			ExpiryDate:     "2027-04-07T10:00:00Z",
-			Owner:          "PharmaCorp",
-			Location:       "Warehouse 1",
-			Status:         "Manufactured",
-		},
-		{
-			ID:             uuid.New().String(),
-			Name:           "Paracetamol",
-			Description:    "Fever and pain reducer",
-			Manufacturer:   "XYZ Healthcare",
-			BatchID:        "B67890",
-			ManufacturedAt: "2025-03-15T10:00:00Z",
-			ExpiryDate:     "2027-03-15T10:00:00Z",
-			Owner:          "MediSupply",
-			Location:       "Warehouse 2",
-			Status:         "InTransit",
-		},
-		{
-			ID:             uuid.New().String(),
-			Name:           "Ibuprofen",
-			Description:    "Anti-inflammatory",
-			Manufacturer:   "HealthCorp",
-			BatchID:        "B13579",
-			ManufacturedAt: "2025-02-25T10:00:00Z",
-			ExpiryDate:     "2027-02-25T10:00:00Z",
-			Owner:          "MediSupply",
-			Location:       "Warehouse 3",
-			Status:         "Delivered",
-		},
-	}
+	drugs := []model.Drug{}
 
 	for _, drug := range drugs {
 		productJSON, err := json.Marshal(drug)
@@ -71,15 +33,46 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 }
 
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, param dto.BatchCreate) error {
+	var BatchID = uuid.NewString()
+
+
+
+	batch := model.Batch{
+		ID: uuid.NewString(),
+		Manufacturer: param.Manufacturer,
+ManufacturedAt: param.ManufacturedAt,
+		ExpiryDate:     param.ExpiryDate
+	}
+}
+
+func (s *SmartCOntract) CreateDrug(ctx contractapi.TransactionContextInterface, param dto.DrugCreate) error {
+	var DrugID = uuid.NewString()
+
+	drug := model.Drug{
+		ID:                DrugID,
+		Name:              param.Name,
+		Description:       param.Description,
+		BatchID:          param.BatchID,
+		Owner: param.Owner,
+		Localtion:       param.Location,
+		Status:       param.Status
+	}
+
+	drugJSON, err := json.Marshal(drug)
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(DrugID, drugJSON)
 }
 
 func (s *SmartContract) BatchExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
-	drugJSON, err := ctx.GetStub().GetState(id)
+	batchJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return false, fmt.Errorf("failed to read from world state: %v", err)
 	}
 
-	return drugJSON != nil, nil
+	return batchJSON != nil, nil
 }
 
 func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, createdAt string, description string, id string, manufacturedPlace string, name string) error {
