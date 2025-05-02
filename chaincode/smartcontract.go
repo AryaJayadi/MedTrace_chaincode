@@ -3,11 +3,13 @@ package chaincode
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/AryaJayadi/SupplyChain_chaincode/dto"
 	"github.com/AryaJayadi/SupplyChain_chaincode/model"
+
 	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
@@ -35,27 +37,46 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 }
 
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, param dto.BatchCreate) error {
-	BatchID := uuid.NewString()
+	mspID, err := ctx.GetClientIdentity().GetMSPID()
+	if err != nil {
+		return fmt.Errorf("failed to get MSP ID: %v", err)
+	}
+
+	batchID := uuid.NewString()
 
 	drugCreate := dto.DrugCreate{
 		Name:        param.Name,
 		Description: param.Description,
-		BatchID:     BatchID,
-		Owner:       param.Owner,
+		BatchID:     batchID,
+		Owner:       mspID,
 		Location:    param.Location,
 		Status:      param.Status,
 	}
 
+	var drugs []string
+
 	for i := 0; i < param.Amount; i++ {
-		CreateDrug(ctx, drugCreate)
+		drugID, err := s.CreateDrug(ctx, drugCreate)
+		if err != nil {
+			return fmt.Errorf("failed to create drug: %v", err)
+		}
+		drugs = append(drugs, drugID)
 	}
 
 	batch := model.Batch{
-		ID:             uuid.NewString(),
+		ID:             batchID,
 		Manufacturer:   param.Manufacturer,
-		ManufacturedAt: param.ManufacturedAt,
+		ManufacturedAt: time.Now(),
 		ExpiryDate:     param.ExpiryDate,
+		Drugs:          drugs,
 	}
+
+	batchJSON, err := json.Marshal(batch)
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(batchID, batchJSON)
 }
 
 func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, param dto.DrugCreate) (string, error) {
