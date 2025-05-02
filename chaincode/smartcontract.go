@@ -140,7 +140,12 @@ func (s *SmartContract) GetAllBatches(ctx contractapi.TransactionContextInterfac
 	if err != nil {
 		return nil, err
 	}
-	defer resultsIterator.Close()
+	defer func(resultsIterator shim.StateQueryIteratorInterface) {
+		err := resultsIterator.Close()
+		if err != nil {
+			fmt.Printf("failed to close iterator: %v\n", err)
+		}
+	}(resultsIterator)
 
 	var batches []*model.Batch
 	for resultsIterator.HasNext() {
