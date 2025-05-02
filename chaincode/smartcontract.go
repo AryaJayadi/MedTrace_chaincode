@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/AryaJayadi/SupplyChain_chaincode/model"
 	"github.com/google/uuid"
 	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
@@ -13,22 +14,8 @@ type SmartContract struct {
 	contractapi.Contract
 }
 
-type Drug struct {
-	ID             string `json:"ID"`             // Unique drug ID
-	Name           string `json:"Name"`           // Drug name
-	Description    string `json:"Description"`    // Description of the drug
-	Manufacturer   string `json:"Manufacturer"`   // Manufacturer name
-	BatchID        string `json:"BatchID"`        // Batch ID
-	ManufacturedAt string `json:"ManufacturedAt"` // Manufacture timestamp, e.g., "2025-04-07T10:00:00Z"
-	ExpiryDate     string `json:"ExpiryDate"`     // Drug expiry date
-	Owner          string `json:"Owner"`          // Current owner (useful in chain of custody)
-	Location       string `json:"Location"`       // physical or logical location
-	Status         string `json:"Status"`         // e.g., Manufactured, InTransit, Delivered, Expired
-}
-
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
-	// Initialize some drugs with sample data
-	drugs := []Drug{
+	drugs := []model.Drug{
 		{
 			ID:             uuid.New().String(),
 			Name:           "Aspirin",
@@ -67,14 +54,12 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 		},
 	}
 
-	// Loop through the drugs array and put each drug in the ledger
 	for _, drug := range drugs {
 		productJSON, err := json.Marshal(drug)
 		if err != nil {
 			return err
 		}
 
-		// Use the drug's ID as the key for storing the drug
 		err = ctx.GetStub().PutState(drug.ID, productJSON)
 		if err != nil {
 			return fmt.Errorf("failed to put to world state: %v", err)
@@ -93,7 +78,7 @@ func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, 
 		return fmt.Errorf("the asset %s already exists", id)
 	}
 
-	product := Drug{
+	product := model.Drug{
 		CreatedAt:         createdAt,
 		Description:       description,
 		ID:                id,
@@ -108,7 +93,7 @@ func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, 
 	return ctx.GetStub().PutState(id, productJson)
 }
 
-func (s *SmartContract) ReadDrug(ctx contractapi.TransactionContextInterface, id string) (*Drug, error) {
+func (s *SmartContract) ReadDrug(ctx contractapi.TransactionContextInterface, id string) (*model.Drug, error) {
 	productJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from world state: %v", err)
@@ -117,7 +102,7 @@ func (s *SmartContract) ReadDrug(ctx contractapi.TransactionContextInterface, id
 		return nil, fmt.Errorf("the product %s does not exist", id)
 	}
 
-	var product Drug
+	var product model.Drug
 	err = json.Unmarshal(productJSON, &product)
 	if err != nil {
 		return nil, err
@@ -135,7 +120,7 @@ func (s *SmartContract) UpdateDrug(ctx contractapi.TransactionContextInterface, 
 		return fmt.Errorf("the product %s does not exist", id)
 	}
 
-	product := Drug{
+	product := model.Drug{
 		Description:       description,
 		ID:                id,
 		ManufacturedPlace: manufacturedPlace,
@@ -170,7 +155,7 @@ func (s *SmartContract) DrugExists(ctx contractapi.TransactionContextInterface, 
 	return productJSON != nil, nil
 }
 
-func (s *SmartContract) GetAllDrugs(ctx contractapi.TransactionContextInterface) ([]*Drug, error) {
+func (s *SmartContract) GetAllDrugs(ctx contractapi.TransactionContextInterface) ([]*model.Drug, error) {
 	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
 	if err != nil {
 		return nil, err
@@ -182,14 +167,14 @@ func (s *SmartContract) GetAllDrugs(ctx contractapi.TransactionContextInterface)
 		}
 	}(resultsIterator)
 
-	var drugs []*Drug
+	var drugs []*model.Drug
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
 			return nil, err
 		}
 
-		var product Drug
+		var product model.Drug
 		err = json.Unmarshal(queryResponse.Value, &product)
 		if err != nil {
 			return nil, err
