@@ -4,5 +4,5 @@ type ModelPrefix string
 
 const (
 	PrefixBatch ModelPrefix = "BATCH_"
-	PRefixDrug  ModelPrefix = "DRUG_"
+	PrefixDrug  ModelPrefix = "DRUG_"
 )

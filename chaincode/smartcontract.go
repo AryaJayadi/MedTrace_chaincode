@@ -76,7 +76,8 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 		return err
 	}
 
-	return ctx.GetStub().PutState("BATCH_"+batchID, batchJSON)
+	key := string(model.PrefixBatch) + batchID
+	return ctx.GetStub().PutState(key, batchJSON)
 }
 
 func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, param dto.DrugCreate) (string, error) {
@@ -97,7 +98,8 @@ func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, 
 		return "", err
 	}
 
-	err = ctx.GetStub().PutState("DRUG_"+DrugID, drugJSON)
+	key := string(model.PrefixDrug) + DrugID
+	err = ctx.GetStub().PutState(key, drugJSON)
 	if err != nil {
 		return "", err
 	}
@@ -133,7 +135,9 @@ func (s *SmartContract) ReadDrug(ctx contractapi.TransactionContextInterface, id
 }
 
 func (s *SmartContract) GetAllBatches(ctx contractapi.TransactionContextInterface) ([]*model.Batch, error) {
-	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+	startKey := string(model.PrefixBatch)
+	endKey := string(model.PrefixBatch) + "~"
+	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +183,9 @@ func (s *SmartContract) DrugExists(ctx contractapi.TransactionContextInterface, 
 }
 
 func (s *SmartContract) GetAllDrugs(ctx contractapi.TransactionContextInterface) ([]*model.Drug, error) {
-	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+	startKey := string(model.PrefixDrug)
+	endKey := string(model.PrefixDrug) + "~"
+	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
 	if err != nil {
 		return nil, err
 	}
