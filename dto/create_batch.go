@@ -1,6 +1,7 @@
 package dto
 
 type BatchCreate struct {
+	Amount       int    `json:"Amount"`       // Amount of drugs in the batch
 	Description  string `json:"Description"`  // Drug description
 	Manufacturer string `json:"Manufacturer"` // Manufacturer name
 	Name         string `json:"Name"`         // Drug name
