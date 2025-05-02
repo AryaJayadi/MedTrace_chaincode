@@ -22,12 +22,12 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	drugs := []model.Drug{}
 
 	for _, drug := range drugs {
-		productJSON, err := json.Marshal(drug)
+		drugJSON, err := json.Marshal(drug)
 		if err != nil {
 			return err
 		}
 
-		err = ctx.GetStub().PutState(drug.ID, productJSON)
+		err = ctx.GetStub().PutState(drug.ID, drugJSON)
 		if err != nil {
 			return fmt.Errorf("failed to put to world state: %v", err)
 		}
@@ -114,46 +114,22 @@ func (s *SmartContract) BatchExists(ctx contractapi.TransactionContextInterface,
 	return batchJSON != nil, nil
 }
 
-func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, createdAt string, description string, id string, manufacturedPlace string, name string) error {
-	exists, err := s.DrugExists(ctx, id)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return fmt.Errorf("the asset %s already exists", id)
-	}
-
-	product := model.Drug{
-		CreatedAt:         createdAt,
-		Description:       description,
-		ID:                id,
-		ManufacturedPlace: manufacturedPlace,
-		Name:              name,
-	}
-	productJson, err := json.Marshal(product)
-	if err != nil {
-		return err
-	}
-
-	return ctx.GetStub().PutState(id, productJson)
-}
-
 func (s *SmartContract) ReadDrug(ctx contractapi.TransactionContextInterface, id string) (*model.Drug, error) {
-	productJSON, err := ctx.GetStub().GetState(id)
+	drugJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from world state: %v", err)
 	}
-	if productJSON == nil {
-		return nil, fmt.Errorf("the product %s does not exist", id)
+	if drugJSON == nil {
+		return nil, fmt.Errorf("the drug %s does not exist", id)
 	}
 
-	var product model.Drug
-	err = json.Unmarshal(productJSON, &product)
+	var drug model.Drug
+	err = json.Unmarshal(drugJSON, &drug)
 	if err != nil {
 		return nil, err
 	}
 
-	return &product, nil
+	return &drug, nil
 }
 
 func (s *SmartContract) UpdateDrug(ctx contractapi.TransactionContextInterface, description string, id string, manufacturedPlace string, name string) error {
@@ -162,21 +138,21 @@ func (s *SmartContract) UpdateDrug(ctx contractapi.TransactionContextInterface, 
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("the product %s does not exist", id)
+		return fmt.Errorf("the drug %s does not exist", id)
 	}
 
-	product := model.Drug{
+	drug := model.Drug{
 		Description:       description,
 		ID:                id,
 		ManufacturedPlace: manufacturedPlace,
 		Name:              name,
 	}
-	productJson, err := json.Marshal(product)
+	drugJson, err := json.Marshal(drug)
 	if err != nil {
 		return err
 	}
 
-	return ctx.GetStub().PutState(id, productJson)
+	return ctx.GetStub().PutState(id, drugJson)
 }
 
 func (s *SmartContract) DeleteDrug(ctx contractapi.TransactionContextInterface, id string) error {
@@ -185,19 +161,19 @@ func (s *SmartContract) DeleteDrug(ctx contractapi.TransactionContextInterface, 
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("the product %s does not exist", id)
+		return fmt.Errorf("the drug %s does not exist", id)
 	}
 
 	return ctx.GetStub().DelState(id)
 }
 
 func (s *SmartContract) DrugExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
-	productJSON, err := ctx.GetStub().GetState(id)
+	drugJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return false, fmt.Errorf("failed to read from world state: %v", err)
 	}
 
-	return productJSON != nil, nil
+	return drugJSON != nil, nil
 }
 
 func (s *SmartContract) GetAllDrugs(ctx contractapi.TransactionContextInterface) ([]*model.Drug, error) {
@@ -219,12 +195,12 @@ func (s *SmartContract) GetAllDrugs(ctx contractapi.TransactionContextInterface)
 			return nil, err
 		}
 
-		var product model.Drug
-		err = json.Unmarshal(queryResponse.Value, &product)
+		var drug model.Drug
+		err = json.Unmarshal(queryResponse.Value, &drug)
 		if err != nil {
 			return nil, err
 		}
-		drugs = append(drugs, &product)
+		drugs = append(drugs, &drug)
 	}
 
 	return drugs, nil

@@ -10,12 +10,12 @@ import (
 // the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.
 
 func main() {
-	productChaincode, err := contractapi.NewChaincode(&chaincode.SmartContract{})
+	drugChaincode, err := contractapi.NewChaincode(&chaincode.SmartContract{})
 	if err != nil {
-		log.Panicf("Error creating product chaincode: %s", err)
+		log.Panicf("Error creating drug chaincode: %s", err)
 	}
 
-	if err := productChaincode.Start(); err != nil {
-		log.Panicf("Error starting product chaincode: %s", err)
+	if err := drugChaincode.Start(); err != nil {
+		log.Panicf("Error starting drug chaincode: %s", err)
 	}
 }
