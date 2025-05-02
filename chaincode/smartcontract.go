@@ -3,6 +3,7 @@ package chaincode
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
@@ -12,87 +13,69 @@ type SmartContract struct {
 	contractapi.Contract
 }
 
-type Product struct {
-	CreatedAt         string `json:"CreatedAt"`         // e.g., "2025-04-07T10:00:00Z"
-	Description       string `json:"Description"`       // Product description
-	ID                string `json:"ID"`                // Unique ID
-	ManufacturedPlace string `json:"ManufacturedPlace"` // Where it was manufactured
-	Name              string `json:"Name"`              // Product name
+type Drug struct {
+	ID             string `json:"ID"`             // Unique drug ID
+	Name           string `json:"Name"`           // Drug name
+	Description    string `json:"Description"`    // Description of the drug
+	Manufacturer   string `json:"Manufacturer"`   // Manufacturer name
+	BatchID        string `json:"BatchID"`        // Batch ID
+	ManufacturedAt string `json:"ManufacturedAt"` // Manufacture timestamp, e.g., "2025-04-07T10:00:00Z"
+	ExpiryDate     string `json:"ExpiryDate"`     // Drug expiry date
+	Owner          string `json:"Owner"`          // Current owner (useful in chain of custody)
+	Location       string `json:"Location"`       // physical or logical location
+	Status         string `json:"Status"`         // e.g., Manufactured, InTransit, Delivered, Expired
 }
 
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
-	products := []Product{
+	// Initialize some drugs with sample data
+	drugs := []Drug{
 		{
-			Name:              "Wireless Mouse",
-			CreatedAt:         "2025-04-01T09:00:00Z",
-			Description:       "Ergonomic wireless mouse with USB receiver",
-			ManufacturedPlace: "Shenzhen, China",
+			ID:             uuid.New().String(),
+			Name:           "Aspirin",
+			Description:    "Pain reliever",
+			Manufacturer:   "ABC Pharma",
+			BatchID:        "B12345",
+			ManufacturedAt: "2025-04-07T10:00:00Z",
+			ExpiryDate:     "2027-04-07T10:00:00Z",
+			Owner:          "PharmaCorp",
+			Location:       "Warehouse 1",
+			Status:         "Manufactured",
 		},
 		{
-			Name:              "Mechanical Keyboard",
-			CreatedAt:         "2025-04-01T09:15:00Z",
-			Description:       "RGB backlit mechanical keyboard with blue switches",
-			ManufacturedPlace: "Taipei, Taiwan",
+			ID:             uuid.New().String(),
+			Name:           "Paracetamol",
+			Description:    "Fever and pain reducer",
+			Manufacturer:   "XYZ Healthcare",
+			BatchID:        "B67890",
+			ManufacturedAt: "2025-03-15T10:00:00Z",
+			ExpiryDate:     "2027-03-15T10:00:00Z",
+			Owner:          "MediSupply",
+			Location:       "Warehouse 2",
+			Status:         "InTransit",
 		},
 		{
-			Name:              "Smartphone Stand",
-			CreatedAt:         "2025-04-01T09:30:00Z",
-			Description:       "Adjustable aluminum stand for mobile phones",
-			ManufacturedPlace: "Jakarta, Indonesia",
-		},
-		{
-			Name:              "USB-C Hub",
-			CreatedAt:         "2025-04-01T09:45:00Z",
-			Description:       "6-in-1 USB-C hub with HDMI and Ethernet ports",
-			ManufacturedPlace: "Seoul, South Korea",
-		},
-		{
-			Name:              "Noise-Cancelling Headphones",
-			CreatedAt:         "2025-04-01T10:00:00Z",
-			Description:       "Wireless over-ear headphones with ANC",
-			ManufacturedPlace: "Tokyo, Japan",
-		},
-		{
-			Name:              "4K Webcam",
-			CreatedAt:         "2025-04-01T10:15:00Z",
-			Description:       "Ultra HD webcam with built-in microphone",
-			ManufacturedPlace: "Hanoi, Vietnam",
-		},
-		{
-			Name:              "External SSD",
-			CreatedAt:         "2025-04-01T10:30:00Z",
-			Description:       "1TB portable SSD with USB 3.2",
-			ManufacturedPlace: "Bangkok, Thailand",
-		},
-		{
-			Name:              "Gaming Chair",
-			CreatedAt:         "2025-04-01T10:45:00Z",
-			Description:       "Ergonomic chair with lumbar support and tilt lock",
-			ManufacturedPlace: "Kuala Lumpur, Malaysia",
-		},
-		{
-			Name:              "Smartwatch",
-			CreatedAt:         "2025-04-01T11:00:00Z",
-			Description:       "Fitness-focused smartwatch with GPS and heart rate",
-			ManufacturedPlace: "New Delhi, India",
-		},
-		{
-			Name:              "Portable Projector",
-			CreatedAt:         "2025-04-01T11:15:00Z",
-			Description:       "Mini HD projector with Wi-Fi and Bluetooth",
-			ManufacturedPlace: "Manila, Philippines",
+			ID:             uuid.New().String(),
+			Name:           "Ibuprofen",
+			Description:    "Anti-inflammatory",
+			Manufacturer:   "HealthCorp",
+			BatchID:        "B13579",
+			ManufacturedAt: "2025-02-25T10:00:00Z",
+			ExpiryDate:     "2027-02-25T10:00:00Z",
+			Owner:          "MediSupply",
+			Location:       "Warehouse 3",
+			Status:         "Delivered",
 		},
 	}
 
-	for i := range products {
-		products[i].ID = uuid.New().String()
-
-		productJSON, err := json.Marshal(products[i])
+	// Loop through the drugs array and put each drug in the ledger
+	for _, drug := range drugs {
+		productJSON, err := json.Marshal(drug)
 		if err != nil {
 			return err
 		}
 
-		err = ctx.GetStub().PutState(products[i].ID, productJSON)
+		// Use the drug's ID as the key for storing the drug
+		err = ctx.GetStub().PutState(drug.ID, productJSON)
 		if err != nil {
 			return fmt.Errorf("failed to put to world state: %v", err)
 		}
@@ -101,8 +84,8 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	return nil
 }
 
-func (s *SmartContract) CreateProduct(ctx contractapi.TransactionContextInterface, createdAt string, description string, id string, manufacturedPlace string, name string) error {
-	exists, err := s.ProductExists(ctx, id)
+func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, createdAt string, description string, id string, manufacturedPlace string, name string) error {
+	exists, err := s.DrugExists(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -110,7 +93,7 @@ func (s *SmartContract) CreateProduct(ctx contractapi.TransactionContextInterfac
 		return fmt.Errorf("the asset %s already exists", id)
 	}
 
-	product := Product{
+	product := Drug{
 		CreatedAt:         createdAt,
 		Description:       description,
 		ID:                id,
@@ -125,7 +108,7 @@ func (s *SmartContract) CreateProduct(ctx contractapi.TransactionContextInterfac
 	return ctx.GetStub().PutState(id, productJson)
 }
 
-func (s *SmartContract) ReadProduct(ctx contractapi.TransactionContextInterface, id string) (*Product, error) {
+func (s *SmartContract) ReadDrug(ctx contractapi.TransactionContextInterface, id string) (*Drug, error) {
 	productJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from world state: %v", err)
@@ -134,7 +117,7 @@ func (s *SmartContract) ReadProduct(ctx contractapi.TransactionContextInterface,
 		return nil, fmt.Errorf("the product %s does not exist", id)
 	}
 
-	var product Product
+	var product Drug
 	err = json.Unmarshal(productJSON, &product)
 	if err != nil {
 		return nil, err
@@ -143,8 +126,8 @@ func (s *SmartContract) ReadProduct(ctx contractapi.TransactionContextInterface,
 	return &product, nil
 }
 
-func (s *SmartContract) UpdateProduct(ctx contractapi.TransactionContextInterface, description string, id string, manufacturedPlace string, name string) error {
-	exists, err := s.ProductExists(ctx, id)
+func (s *SmartContract) UpdateDrug(ctx contractapi.TransactionContextInterface, description string, id string, manufacturedPlace string, name string) error {
+	exists, err := s.DrugExists(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -152,7 +135,7 @@ func (s *SmartContract) UpdateProduct(ctx contractapi.TransactionContextInterfac
 		return fmt.Errorf("the product %s does not exist", id)
 	}
 
-	product := Product{
+	product := Drug{
 		Description:       description,
 		ID:                id,
 		ManufacturedPlace: manufacturedPlace,
@@ -166,8 +149,8 @@ func (s *SmartContract) UpdateProduct(ctx contractapi.TransactionContextInterfac
 	return ctx.GetStub().PutState(id, productJson)
 }
 
-func (s *SmartContract) DeleteProduct(ctx contractapi.TransactionContextInterface, id string) error {
-	exists, err := s.ProductExists(ctx, id)
+func (s *SmartContract) DeleteDrug(ctx contractapi.TransactionContextInterface, id string) error {
+	exists, err := s.DrugExists(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -178,7 +161,7 @@ func (s *SmartContract) DeleteProduct(ctx contractapi.TransactionContextInterfac
 	return ctx.GetStub().DelState(id)
 }
 
-func (s *SmartContract) ProductExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
+func (s *SmartContract) DrugExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	productJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return false, fmt.Errorf("failed to read from world state: %v", err)
@@ -187,7 +170,7 @@ func (s *SmartContract) ProductExists(ctx contractapi.TransactionContextInterfac
 	return productJSON != nil, nil
 }
 
-func (s *SmartContract) GetAllProducts(ctx contractapi.TransactionContextInterface) ([]*Product, error) {
+func (s *SmartContract) GetAllDrugs(ctx contractapi.TransactionContextInterface) ([]*Drug, error) {
 	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
 	if err != nil {
 		return nil, err
@@ -199,20 +182,20 @@ func (s *SmartContract) GetAllProducts(ctx contractapi.TransactionContextInterfa
 		}
 	}(resultsIterator)
 
-	var products []*Product
+	var drugs []*Drug
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
 			return nil, err
 		}
 
-		var product Product
+		var product Drug
 		err = json.Unmarshal(queryResponse.Value, &product)
 		if err != nil {
 			return nil, err
 		}
-		products = append(products, &product)
+		drugs = append(drugs, &product)
 	}
 
-	return products, nil
+	return drugs, nil
 }
