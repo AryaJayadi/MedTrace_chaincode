@@ -132,27 +132,29 @@ func (s *SmartContract) ReadDrug(ctx contractapi.TransactionContextInterface, id
 	return &drug, nil
 }
 
-func (s *SmartContract) UpdateDrug(ctx contractapi.TransactionContextInterface, description string, id string, manufacturedPlace string, name string) error {
-	exists, err := s.DrugExists(ctx, id)
+func (s *SmartContract) GetAllBatches(ctx contractapi.TransactionContextInterface) ([]*model.Batch, error) {
+	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if !exists {
-		return fmt.Errorf("the drug %s does not exist", id)
+	defer resultsIterator.Close()
+
+	var batches []*model.Batch
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var batch model.Batch
+		err = json.Unmarshal(queryResponse.Value, &batch)
+		if err != nil {
+			return nil, err
+		}
+		batches = append(batches, &batch)
 	}
 
-	drug := model.Drug{
-		Description:       description,
-		ID:                id,
-		ManufacturedPlace: manufacturedPlace,
-		Name:              name,
-	}
-	drugJson, err := json.Marshal(drug)
-	if err != nil {
-		return err
-	}
-
-	return ctx.GetStub().PutState(id, drugJson)
+	return batches, nil
 }
 
 func (s *SmartContract) DeleteDrug(ctx contractapi.TransactionContextInterface, id string) error {
