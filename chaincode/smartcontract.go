@@ -76,7 +76,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 		return err
 	}
 
-	return ctx.GetStub().PutState(batchID, batchJSON)
+	return ctx.GetStub().PutState("BATCH_"+batchID, batchJSON)
 }
 
 func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, param dto.DrugCreate) (string, error) {
@@ -97,7 +97,7 @@ func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, 
 		return "", err
 	}
 
-	err = ctx.GetStub().PutState(DrugID, drugJSON)
+	err = ctx.GetStub().PutState("DRUG_"+DrugID, drugJSON)
 	if err != nil {
 		return "", err
 	}
