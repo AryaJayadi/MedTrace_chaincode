@@ -115,24 +115,6 @@ func (s *SmartContract) BatchExists(ctx contractapi.TransactionContextInterface,
 	return batchJSON != nil, nil
 }
 
-func (s *SmartContract) ReadDrug(ctx contractapi.TransactionContextInterface, id string) (*model.Drug, error) {
-	drugJSON, err := ctx.GetStub().GetState(id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read from world state: %v", err)
-	}
-	if drugJSON == nil {
-		return nil, fmt.Errorf("the drug %s does not exist", id)
-	}
-
-	var drug model.Drug
-	err = json.Unmarshal(drugJSON, &drug)
-	if err != nil {
-		return nil, err
-	}
-
-	return &drug, nil
-}
-
 func (s *SmartContract) GetAllBatches(ctx contractapi.TransactionContextInterface) ([]*model.Batch, error) {
 	startKey := string(model.PrefixBatch)
 	endKey := string(model.PrefixBatch) + "~"
@@ -163,57 +145,4 @@ func (s *SmartContract) GetAllBatches(ctx contractapi.TransactionContextInterfac
 	}
 
 	return batches, nil
-}
-
-func (s *SmartContract) DeleteDrug(ctx contractapi.TransactionContextInterface, id string) error {
-	exists, err := s.DrugExists(ctx, id)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return fmt.Errorf("the drug %s does not exist", id)
-	}
-
-	return ctx.GetStub().DelState(id)
-}
-
-func (s *SmartContract) DrugExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
-	drugJSON, err := ctx.GetStub().GetState(id)
-	if err != nil {
-		return false, fmt.Errorf("failed to read from world state: %v", err)
-	}
-
-	return drugJSON != nil, nil
-}
-
-func (s *SmartContract) GetAllDrugs(ctx contractapi.TransactionContextInterface) ([]*model.Drug, error) {
-	startKey := string(model.PrefixDrug)
-	endKey := string(model.PrefixDrug) + "~"
-	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
-	if err != nil {
-		return nil, err
-	}
-	defer func(resultsIterator shim.StateQueryIteratorInterface) {
-		err := resultsIterator.Close()
-		if err != nil {
-			fmt.Printf("failed to close iterator: %v\n", err)
-		}
-	}(resultsIterator)
-
-	var drugs []*model.Drug
-	for resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			return nil, err
-		}
-
-		var drug model.Drug
-		err = json.Unmarshal(queryResponse.Value, &drug)
-		if err != nil {
-			return nil, err
-		}
-		drugs = append(drugs, &drug)
-	}
-
-	return drugs, nil
 }
