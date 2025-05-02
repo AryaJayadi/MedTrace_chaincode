@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/AryaJayadi/SupplyChain_chaincode/dto"
 	"github.com/AryaJayadi/SupplyChain_chaincode/model"
 	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
@@ -33,37 +35,53 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 }
 
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, param dto.BatchCreate) error {
-	var BatchID = uuid.NewString()
+	BatchID := uuid.NewString()
 
+	drugCreate := dto.DrugCreate{
+		Name:        param.Name,
+		Description: param.Description,
+		BatchID:     BatchID,
+		Owner:       param.Owner,
+		Location:    param.Location,
+		Status:      param.Status,
+	}
 
+	for i := 0; i < param.Amount; i++ {
+		CreateDrug(ctx, drugCreate)
+	}
 
 	batch := model.Batch{
-		ID: uuid.NewString(),
-		Manufacturer: param.Manufacturer,
-ManufacturedAt: param.ManufacturedAt,
-		ExpiryDate:     param.ExpiryDate
+		ID:             uuid.NewString(),
+		Manufacturer:   param.Manufacturer,
+		ManufacturedAt: param.ManufacturedAt,
+		ExpiryDate:     param.ExpiryDate,
 	}
 }
 
-func (s *SmartCOntract) CreateDrug(ctx contractapi.TransactionContextInterface, param dto.DrugCreate) error {
-	var DrugID = uuid.NewString()
+func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, param dto.DrugCreate) (string, error) {
+	DrugID := uuid.NewString()
 
 	drug := model.Drug{
-		ID:                DrugID,
-		Name:              param.Name,
-		Description:       param.Description,
-		BatchID:          param.BatchID,
-		Owner: param.Owner,
-		Localtion:       param.Location,
-		Status:       param.Status
+		ID:          DrugID,
+		Name:        param.Name,
+		Description: param.Description,
+		BatchID:     param.BatchID,
+		Owner:       param.Owner,
+		Location:    param.Location,
+		Status:      param.Status,
 	}
 
 	drugJSON, err := json.Marshal(drug)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return ctx.GetStub().PutState(DrugID, drugJSON)
+	err = ctx.GetStub().PutState(DrugID, drugJSON)
+	if err != nil {
+		return "", err
+	}
+
+	return DrugID, nil
 }
 
 func (s *SmartContract) BatchExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
