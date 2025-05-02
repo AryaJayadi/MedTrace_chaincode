@@ -54,8 +54,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	}
 
 	var drugs []string
-
-	for i := 0; i < param.Amount; i++ {
+	for range param.Amount {
 		drugID, err := s.CreateDrug(ctx, drugCreate)
 		if err != nil {
 			return fmt.Errorf("failed to create drug: %v", err)
