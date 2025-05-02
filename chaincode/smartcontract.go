@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/AryaJayadi/SupplyChain_chaincode/dto"
 	"github.com/AryaJayadi/SupplyChain_chaincode/model"
 	"github.com/google/uuid"
 	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
@@ -67,6 +68,18 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	}
 
 	return nil
+}
+
+func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, param dto.BatchCreate) error {
+}
+
+func (s *SmartContract) BatchExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
+	drugJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return false, fmt.Errorf("failed to read from world state: %v", err)
+	}
+
+	return drugJSON != nil, nil
 }
 
 func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, createdAt string, description string, id string, manufacturedPlace string, name string) error {
