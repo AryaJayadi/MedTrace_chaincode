@@ -1,11 +1,11 @@
 package model
 
+import "time"
+
 type Drug struct {
-	ID          string `json:"ID"`          // Unique drug ID
-	Name        string `json:"Name"`        // Drug name
-	Description string `json:"Description"` // Description
-	BatchID     string `json:"BatchID"`     // Reference to Batch.ID
-	Owner       string `json:"Owner"`       // Current owner
-	Location    string `json:"Location"`    // Current location
-	Status      string `json:"Status"`      // e.g., Manufactured, InTransit, Delivered, Expired
+	ID           string    `json:"ID"`           // Unique drug ID
+	BatchID      string    `json:"BatchID"`      // Reference to Batch.ID
+	OwnerID      string    `json:"OwnerID"`      // Current owner
+	TransferDate time.Time `json:"TransferDate"` // Transfer date
+	ReceiveDate  time.Time `json:"ReceiveDate"`  // Receive date
 }
