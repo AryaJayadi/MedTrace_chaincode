@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/AryaJayadi/SupplyChain_chaincode/dto"
-	"github.com/AryaJayadi/SupplyChain_chaincode/model"
+	"github.com/AryaJayadi/MedTrace_chaincode/dto"
+	"github.com/AryaJayadi/MedTrace_chaincode/model"
 
 	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"

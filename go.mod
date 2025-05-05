@@ -1,4 +1,4 @@
-module github.com/AryaJayadi/SupplyChain_chaincode
+module github.com/AryaJayadi/MedTrace_chaincode
 
 go 1.24.2
 
