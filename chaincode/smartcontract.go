@@ -117,24 +117,24 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 		return nil, fmt.Errorf("only manufacturers can create batches")
 	}
 
-	var batchCreate dto.BatchCreate
-	err = json.Unmarshal([]byte(req), &batchCreate)
+	var createBatch dto.CreateBatch
+	err = json.Unmarshal([]byte(req), &createBatch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal request: %v", err)
 	}
 
-	exisst, err := s.BatchExists(ctx, batchCreate.ID)
+	exisst, err := s.BatchExists(ctx, createBatch.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if batch exists: %v", err)
 	}
 	if exisst {
-		return nil, fmt.Errorf("batch with ID %s already exists", batchCreate.ID)
+		return nil, fmt.Errorf("batch with ID %s already exists", createBatch.ID)
 	}
 
 	batch := model.Batch{
-		DrugName:            batchCreate.DrugName,
-		ExpiryDate:          batchCreate.ExpiryDate,
-		ID:                  batchCreate.ID,
+		DrugName:            createBatch.DrugName,
+		ExpiryDate:          createBatch.ExpiryDate,
+		ID:                  createBatch.ID,
 		ManufacturerName:    org.Name,
 		ManufactureLocation: org.Location,
 		ProductionDate:      time.Now(),
@@ -150,7 +150,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	}
 
 	var drugsIDs []string
-	for range batchCreate.Amount {
+	for range createBatch.Amount {
 		drugID, err := s.CreateDrug(ctx, org.ID, batch.ID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create drug: %v", err)
