@@ -14,6 +14,8 @@ import (
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
 
+const batchDrugIndex = "batch~drug"
+
 type SmartContract struct {
 	contractapi.Contract
 }
@@ -53,6 +55,39 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	}
 
 	return nil
+}
+
+func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, ownerID string, batchID string) (string, error) {
+	drugID := uuid.NewString()
+
+	drug := model.Drug{
+		BatchID: batchID,
+		ID:      drugID,
+		OwnerID: ownerID,
+	}
+
+	drugJSON, err := json.Marshal(drug)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal drug: %v", err)
+	}
+
+	err = ctx.GetStub().PutState(drugID, drugJSON)
+	if err != nil {
+		return "", fmt.Errorf("failed to put drug to world state: %v", err)
+	}
+
+	batchDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(batchDrugIndex, []string{batchID, drugID})
+	if err != nil {
+		return "", fmt.Errorf("failed to create composite key: %v", err)
+	}
+
+	value := []byte{0x00}
+	err = ctx.GetStub().PutState(batchDrugIndexKey, value)
+	if err != nil {
+		return "", fmt.Errorf("failed to put batch-drug index to world state: %v", err)
+	}
+
+	return drugID, nil
 }
 
 func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterface, id string) (*model.Organization, error) {
