@@ -19,15 +19,34 @@ type SmartContract struct {
 }
 
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
-	drugs := []model.Drug{}
+	organizations := []model.Organization{
+		{
+			ID:       "Org1",
+			Location: "Switzerland",
+			Name:     "PharmaCorp",
+			Type:     "Manufacturer",
+		},
+		{
+			ID:       "Org2",
+			Location: "Indonesia",
+			Name:     "SehatDistribusi",
+			Type:     "Distributor",
+		},
+		{
+			ID:       "Org3",
+			Location: "Indonesia",
+			Name:     "ApotekSehat",
+			Type:     "Pharmacy",
+		},
+	}
 
-	for _, drug := range drugs {
-		drugJSON, err := json.Marshal(drug)
+	for _, org := range organizations {
+		orgJSON, err := json.Marshal(org)
 		if err != nil {
 			return err
 		}
 
-		err = ctx.GetStub().PutState(drug.ID, drugJSON)
+		err = ctx.GetStub().PutState(org.ID, orgJSON)
 		if err != nil {
 			return fmt.Errorf("failed to put to world state: %v", err)
 		}
