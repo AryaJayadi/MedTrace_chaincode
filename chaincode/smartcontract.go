@@ -180,6 +180,38 @@ func (s *SmartContract) GetBatch(ctx contractapi.TransactionContextInterface, id
 	return &batch, nil
 }
 
+func (s *SmartContract) UpdateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
+	org, err := s.getOrg(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization ID: %v", err)
+	}
+	if org.Type != "Manufacturer" {
+		return nil, fmt.Errorf("only manufacturers can update batches")
+	}
+
+	var updateBatch dto.UpdateBatch
+	err = json.Unmarshal([]byte(req), &updateBatch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal request: %v", err)
+	}
+
+	batch, err := s.GetBatch(ctx, updateBatch.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get batch: %v", err)
+	}
+
+	batch.DrugName = updateBatch.DrugName
+	batch.ExpiryDate = updateBatch.ExpiryDate
+	batch.ProductionDate = time.Now()
+
+	batchJSON, err := json.Marshal(batch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal batch: %v", err)
+	}
+
+	err = ctx.GetStub().PutState(batch.ID, batchJSON)
+}
+
 func (s *SmartContract) getOrg(ctx contractapi.TransactionContextInterface) (*model.Organization, error) {
 	orgID, ok, err := cid.GetAttributeValue(ctx.GetStub(), "org.id")
 	if err != nil {
