@@ -55,6 +55,31 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	return nil
 }
 
+func (s *SmartContract) GetAllOrganizations(ctx contractapi.TransactionContextInterface) ([]*model.Organization, error) {
+	resIterator, err := ctx.GetStub().GetStateByRange("Org", "Org~")
+	if err != nil {
+		return nil, err
+	}
+	defer resIterator.Close()
+
+	var orgs []*model.Organization
+	for resIterator.HasNext() {
+		res, err := resIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var org model.Organization
+		err = json.Unmarshal(res.Value, &org)
+		if err != nil {
+			return nil, err
+		}
+		orgs = append(orgs, &org)
+	}
+
+	return orgs, nil
+}
+
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, param dto.BatchCreate) error {
 	mspID, err := ctx.GetClientIdentity().GetMSPID()
 	if err != nil {
