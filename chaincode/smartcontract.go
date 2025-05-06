@@ -10,6 +10,7 @@ import (
 	"github.com/AryaJayadi/MedTrace_chaincode/dto"
 	"github.com/AryaJayadi/MedTrace_chaincode/model"
 
+	"github.com/hyperledger/fabric-chaincode-go/v2/pkg/cid"
 	"github.com/hyperledger/fabric-chaincode-go/v2/shim"
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
@@ -106,6 +107,56 @@ func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterf
 	}
 
 	return &org, nil
+}
+
+func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
+	orgID, ok, err := cid.GetAttributeValue(ctx.GetStub(), "org.id")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get org.id attribute: %v", err)
+	}
+	if !ok {
+		return nil, fmt.Errorf("org.id attribute not found")
+	}
+
+	org, err := s.GetOrganization(ctx, orgID)
+	if org.Type != "Manufacturer" {
+		return nil, fmt.Errorf("only manufacturers can create batches")
+	}
+
+	var batchCreate dto.BatchCreate
+	err = json.Unmarshal([]byte(req), &batchCreate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal request: %v", err)
+	}
+
+	batch := model.Batch{
+		DrugName:            batchCreate.DrugName,
+		ExpiryDate:          batchCreate.ExpiryDate,
+		ID:                  batchCreate.ID,
+		ManufacturerName:    org.Name,
+		ManufactureLocation: org.Location,
+		ProductionDate:      time.Now(),
+	}
+	batchJSON, err := json.Marshal(batch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal batch: %v", err)
+	}
+
+	err = ctx.GetStub().PutState(batch.ID, batchJSON)
+	if err != nil {
+		return nil, fmt.Errorf("failed to put batch to world state: %v", err)
+	}
+
+	var drugsIDs []string
+	for range batchCreate.Amount {
+		drugID, err := s.CreateDrug(ctx, org.ID, batch.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create drug: %v", err)
+		}
+		drugsIDs = append(drugsIDs, drugID)
+	}
+
+	return &batch, nil
 }
 
 func (s *SmartContract) GetAllOrganizations(ctx contractapi.TransactionContextInterface) ([]*model.Organization, error) {
