@@ -162,6 +162,24 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	return &batch, nil
 }
 
+func (s *SmartContract) GetBatch(ctx contractapi.TransactionContextInterface, id string) (*model.Batch, error) {
+	batchJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from world state: %v", err)
+	}
+	if batchJSON == nil {
+		return nil, fmt.Errorf("batch %s does not exist", id)
+	}
+
+	var batch model.Batch
+	err = json.Unmarshal(batchJSON, &batch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal batch: %v", err)
+	}
+
+	return &batch, nil
+}
+
 func (s *SmartContract) getOrg(ctx contractapi.TransactionContextInterface) (*model.Organization, error) {
 	orgID, ok, err := cid.GetAttributeValue(ctx.GetStub(), "org.id")
 	if err != nil {
