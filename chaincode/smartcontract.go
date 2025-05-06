@@ -109,17 +109,9 @@ func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterf
 }
 
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
-	orgID, ok, err := cid.GetAttributeValue(ctx.GetStub(), "org.id")
+	org, err := s.getOrg(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get org.id attribute: %v", err)
-	}
-	if !ok {
-		return nil, fmt.Errorf("org.id attribute not found")
-	}
-
-	org, err := s.GetOrganization(ctx, orgID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get organization: %v", err)
+		return nil, fmt.Errorf("failed to get organization ID: %v", err)
 	}
 	if org.Type != "Manufacturer" {
 		return nil, fmt.Errorf("only manufacturers can create batches")
@@ -168,6 +160,22 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	fmt.Printf("Drugs created: %v\n", drugsIDs)
 
 	return &batch, nil
+}
+
+func (s *SmartContract) getOrg(ctx contractapi.TransactionContextInterface) (*model.Organization, error) {
+	orgID, ok, err := cid.GetAttributeValue(ctx.GetStub(), "org.id")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get org.id attribute: %v", err)
+	}
+	if !ok {
+		return nil, fmt.Errorf("org.id attribute not found")
+	}
+
+	org, err := s.GetOrganization(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization: %v", err)
+	}
+	return org, nil
 }
 
 func (s *SmartContract) GetAllOrganizations(ctx contractapi.TransactionContextInterface) ([]*model.Organization, error) {
