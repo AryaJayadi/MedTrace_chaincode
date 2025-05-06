@@ -5,8 +5,8 @@ import (
 )
 
 type BatchCreate struct {
-	ID                  string    `json:"ID"`                  // Unique batch ID
-	ManufactureLocation string    `json:"ManufactureLocation"` // Manufacture location
-	ExpiryDate          time.Time `json:"ExpiryDate"`          // Expiry date for all drugs in the batch
-	DrugName            string    `json:"DrugName"`            // Drug name
+	Amount     int       `json:"Amount"`     // Amount of drugs in the batch
+	DrugName   string    `json:"DrugName"`   // Drug name
+	ExpiryDate time.Time `json:"ExpiryDate"` // Expiry date for all drugs in the batch
+	ID         string    `json:"ID"`         // Unique batch ID
 }
