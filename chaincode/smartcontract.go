@@ -162,6 +162,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 		}
 		drugsIDs = append(drugsIDs, drugID)
 	}
+	fmt.Printf("Drugs created: %v\n", drugsIDs)
 
 	return &batch, nil
 }
