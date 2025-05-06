@@ -55,6 +55,24 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	return nil
 }
 
+func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterface, id string) (*model.Organization, error) {
+	orgJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from world state: %v", err)
+	}
+	if orgJSON == nil {
+		return nil, fmt.Errorf("organization %s does not exist", id)
+	}
+
+	var org model.Organization
+	err = json.Unmarshal(orgJSON, &org)
+	if err != nil {
+		return nil, err
+	}
+
+	return &org, nil
+}
+
 func (s *SmartContract) GetAllOrganizations(ctx contractapi.TransactionContextInterface) ([]*model.Organization, error) {
 	resIterator, err := ctx.GetStub().GetStateByRange("Org", "Org~")
 	if err != nil {
