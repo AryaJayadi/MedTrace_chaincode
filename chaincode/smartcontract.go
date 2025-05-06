@@ -118,6 +118,9 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	}
 
 	org, err := s.GetOrganization(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization: %v", err)
+	}
 	if org.Type != "Manufacturer" {
 		return nil, fmt.Errorf("only manufacturers can create batches")
 	}
