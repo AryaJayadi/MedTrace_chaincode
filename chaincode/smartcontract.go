@@ -139,10 +139,15 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 		return nil, fmt.Errorf("batch with ID %s already exists", createBatch.ID)
 	}
 
+	ID, err := s.generateModelId(ctx, batchKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate batch ID: %v", err)
+	}
+
 	batch := model.Batch{
 		DrugName:            createBatch.DrugName,
 		ExpiryDate:          createBatch.ExpiryDate,
-		ID:                  createBatch.ID,
+		ID:                  ID,
 		ManufacturerName:    org.Name,
 		ManufactureLocation: org.Location,
 		ProductionDate:      time.Now(),
