@@ -3,6 +3,7 @@ package chaincode
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,7 +17,6 @@ import (
 
 const (
 	batchDrugIndex = "batch~drug"
-	modelIdIndex   = "model~Id"
 )
 
 const (
@@ -61,20 +61,6 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			return fmt.Errorf("failed to put to world state: %v", err)
 		}
 	}
-
-	value := []byte{0x00}
-
-	batchIdIndexKey, err := ctx.GetStub().CreateCompositeKey(modelIdIndex, []string{batchKey, "0"})
-	if err != nil {
-		return fmt.Errorf("failed to create composite key: %v", err)
-	}
-	ctx.GetStub().PutState(batchIdIndexKey, value)
-
-	transferIdIndexKey, err := ctx.GetStub().CreateCompositeKey(modelIdIndex, []string{transferKey, "0"})
-	if err != nil {
-		return fmt.Errorf("failed to create composite key: %v", err)
-	}
-	ctx.GetStub().PutState(transferIdIndexKey, value)
 
 	return nil
 }
@@ -287,4 +273,36 @@ func (s *SmartContract) BatchExists(ctx contractapi.TransactionContextInterface,
 	}
 
 	return batchJSON != nil, nil
+}
+
+func (s *SmartContract) generateModelId(ctx contractapi.TransactionContextInterface, modelKey string) (string, error) {
+	// Create a unique key to store the latest ID number
+	latestIDKey := fmt.Sprintf("LatestID_%s", modelKey)
+
+	// Get the latest ID from the ledger
+	latestIDBytes, err := ctx.GetStub().GetState(latestIDKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to get latest ID: %v", err)
+	}
+
+	latestNum := 0
+	if latestIDBytes != nil {
+		latestNum, err = strconv.Atoi(string(latestIDBytes))
+		if err != nil {
+			return "", fmt.Errorf("failed to parse latest ID number: %v", err)
+		}
+	}
+
+	// Increment the number
+	newIDNum := latestNum + 1
+
+	// Save the updated number back to the ledger
+	err = ctx.GetStub().PutState(latestIDKey, []byte(strconv.Itoa(newIDNum)))
+	if err != nil {
+		return "", fmt.Errorf("failed to store new latest ID: %v", err)
+	}
+
+	// Format the final ID, e.g., B001, T002, etc.
+	formattedID := fmt.Sprintf("%s%03d", modelKey, newIDNum)
+	return formattedID, nil
 }
