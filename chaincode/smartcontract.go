@@ -14,7 +14,15 @@ import (
 	"github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
 
-const batchDrugIndex = "batch~drug"
+const (
+	batchDrugIndex = "batch~drug"
+	modelIdIndex   = "model~Id"
+)
+
+const (
+	batchKey    = "B"
+	transferKey = "T"
+)
 
 type SmartContract struct {
 	contractapi.Contract
@@ -53,6 +61,20 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			return fmt.Errorf("failed to put to world state: %v", err)
 		}
 	}
+
+	value := []byte{0x00}
+
+	batchIdIndexKey, err := ctx.GetStub().CreateCompositeKey(modelIdIndex, []string{batchKey, "0"})
+	if err != nil {
+		return fmt.Errorf("failed to create composite key: %v", err)
+	}
+	ctx.GetStub().PutState(batchIdIndexKey, value)
+
+	transferIdIndexKey, err := ctx.GetStub().CreateCompositeKey(modelIdIndex, []string{transferKey, "0"})
+	if err != nil {
+		return fmt.Errorf("failed to create composite key: %v", err)
+	}
+	ctx.GetStub().PutState(transferIdIndexKey, value)
 
 	return nil
 }
@@ -123,11 +145,11 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 		return nil, fmt.Errorf("failed to unmarshal request: %v", err)
 	}
 
-	exisst, err := s.BatchExists(ctx, createBatch.ID)
+	exist, err := s.BatchExists(ctx, createBatch.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if batch exists: %v", err)
 	}
-	if exisst {
+	if exist {
 		return nil, fmt.Errorf("batch with ID %s already exists", createBatch.ID)
 	}
 
