@@ -210,6 +210,11 @@ func (s *SmartContract) UpdateBatch(ctx contractapi.TransactionContextInterface,
 	}
 
 	err = ctx.GetStub().PutState(batch.ID, batchJSON)
+	if err != nil {
+		return nil, fmt.Errorf("failed to put batch to world state: %v", err)
+	}
+
+	return batch, nil
 }
 
 func (s *SmartContract) getOrg(ctx contractapi.TransactionContextInterface) (*model.Organization, error) {
