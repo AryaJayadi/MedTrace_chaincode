@@ -48,6 +48,12 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 			Name:     "ApotekSehat",
 			Type:     "Pharmacy",
 		},
+		{
+			ID:       "Org4",
+			Location: "Indonesia",
+			Name:     "Pasien",
+			Type:     "Patient",
+		},
 	}
 
 	for _, org := range organizations {
@@ -64,6 +70,8 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 
 	return nil
 }
+
+func (s *SmartContract) TransferDrug(ctx contractapi.TransactionContextInterface)
 
 func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, ownerID string, batchID string) (string, error) {
 	drugID := uuid.NewString()
