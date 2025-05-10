@@ -4,8 +4,8 @@ go 1.24.2
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/hyperledger/fabric-chaincode-go/v2 v2.0.0
 	github.com/hyperledger/fabric-contract-api-go/v2 v2.2.0
-	github.com/hyperledger/fabric-samples/asset-transfer-basic/chaincode-go v0.0.0-20250324191558-b82a309d916f
 )
 
 require (
@@ -13,7 +13,6 @@ require (
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/hyperledger/fabric-chaincode-go/v2 v2.0.0 // indirect
 	github.com/hyperledger/fabric-protos-go-apiv2 v0.3.4 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
