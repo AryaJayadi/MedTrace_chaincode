@@ -71,8 +71,6 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	return nil
 }
 
-func (s *SmartContract) TransferDrug(ctx contractapi.TransactionContextInterface)
-
 func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, ownerID string, batchID string) (string, error) {
 	drugID := uuid.NewString()
 
