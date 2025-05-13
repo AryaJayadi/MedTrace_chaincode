@@ -184,7 +184,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	}
 	fmt.Printf("Drugs created: %v\n", drugsIDs)
 
-	err = s.saveModelId(ctx, drugKey, drugInt+createBatch.Amount)
+	err = s.saveModelId(ctx, drugKey, (drugInt-1)+createBatch.Amount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save drug ID: %v", err)
 	}
