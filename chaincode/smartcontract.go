@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/AryaJayadi/MedTrace_chaincode/dto"
 	"github.com/AryaJayadi/MedTrace_chaincode/model"
@@ -232,7 +231,7 @@ func (s *SmartContract) UpdateBatch(ctx contractapi.TransactionContextInterface,
 
 	batch.DrugName = updateBatch.DrugName
 	batch.ExpiryDate = updateBatch.ExpiryDate
-	batch.ProductionDate = time.Now()
+	batch.ProductionDate = updateBatch.ProductionDate
 
 	batchJSON, err := json.Marshal(batch)
 	if err != nil {
