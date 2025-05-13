@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/AryaJayadi/MedTrace_chaincode/dto"
 	"github.com/AryaJayadi/MedTrace_chaincode/model"
 
@@ -23,6 +21,7 @@ const (
 const (
 	batchKey    = "B"
 	transferKey = "T"
+	drugKey     = "D"
 )
 
 type SmartContract struct {
@@ -72,9 +71,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	return nil
 }
 
-func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, ownerID string, batchID string) (string, error) {
-	drugID := uuid.NewString()
-
+func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, ownerID string, batchID string, drugID string) (string, error) {
 	drug := model.Drug{
 		BatchID: batchID,
 		ID:      drugID,
@@ -146,7 +143,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 		return nil, fmt.Errorf("batch with ID %s already exists", createBatch.ID)
 	}
 
-	ID, err := s.generateModelId(ctx, batchKey)
+	batchID, _, err := s.generateModelId(ctx, batchKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate batch ID: %v", err)
 	}
@@ -154,10 +151,10 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	batch := model.Batch{
 		DrugName:            createBatch.DrugName,
 		ExpiryDate:          createBatch.ExpiryDate,
-		ID:                  ID,
+		ID:                  batchID,
 		ManufacturerName:    org.Name,
 		ManufactureLocation: org.Location,
-		ProductionDate:      time.Now(),
+		ProductionDate:      createBatch.ProductionDate,
 	}
 	batchJSON, err := json.Marshal(batch)
 	if err != nil {
@@ -169,15 +166,31 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 		return nil, fmt.Errorf("failed to put batch to world state: %v", err)
 	}
 
+	_, drugInt, err := s.generateModelId(ctx, drugKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate drug ID: %v", err)
+	}
+
 	var drugsIDs []string
-	for range createBatch.Amount {
-		drugID, err := s.CreateDrug(ctx, org.ID, batch.ID)
+	for i := range createBatch.Amount {
+		currDrugInt := drugInt + i
+		drugID, err := s.formatModelId(ctx, drugKey, currDrugInt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to format drug ID: %v", err)
+		}
+
+		drugID, err = s.CreateDrug(ctx, org.ID, batch.ID, drugID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create drug: %v", err)
 		}
 		drugsIDs = append(drugsIDs, drugID)
 	}
 	fmt.Printf("Drugs created: %v\n", drugsIDs)
+
+	err = s.saveModelId(ctx, drugKey, drugInt+createBatch.Amount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save drug ID: %v", err)
+	}
 
 	return &batch, nil
 }
@@ -286,34 +299,43 @@ func (s *SmartContract) BatchExists(ctx contractapi.TransactionContextInterface,
 	return batchJSON != nil, nil
 }
 
-func (s *SmartContract) generateModelId(ctx contractapi.TransactionContextInterface, modelKey string) (string, error) {
-	// Create a unique key to store the latest ID number
+func (s *SmartContract) generateModelId(ctx contractapi.TransactionContextInterface, modelKey string) (string, int, error) {
 	latestIDKey := fmt.Sprintf("LatestID_%s", modelKey)
 
-	// Get the latest ID from the ledger
 	latestIDBytes, err := ctx.GetStub().GetState(latestIDKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to get latest ID: %v", err)
+		return "", -1, fmt.Errorf("failed to get latest ID: %v", err)
 	}
 
 	latestNum := 0
 	if latestIDBytes != nil {
 		latestNum, err = strconv.Atoi(string(latestIDBytes))
 		if err != nil {
-			return "", fmt.Errorf("failed to parse latest ID number: %v", err)
+			return "", -1, fmt.Errorf("failed to parse latest ID number: %v", err)
 		}
 	}
 
-	// Increment the number
 	newIDNum := latestNum + 1
 
-	// Save the updated number back to the ledger
 	err = ctx.GetStub().PutState(latestIDKey, []byte(strconv.Itoa(newIDNum)))
 	if err != nil {
-		return "", fmt.Errorf("failed to store new latest ID: %v", err)
+		return "", -1, fmt.Errorf("failed to store new latest ID: %v", err)
 	}
 
-	// Format the final ID, e.g., B001, T002, etc.
-	formattedID := fmt.Sprintf("%s%03d", modelKey, newIDNum)
+	formattedID, err := s.formatModelId(modelKey, newIDNum)
+	if err != nil {
+		return "", -1, fmt.Errorf("failed to format model ID: %v", err)
+	}
+	return formattedID, newIDNum, err
+}
+
+func (s *SmartContract) saveModelId(ctx contractapi.TransactionContextInterface, modelKey string, id int) error {
+	latestIDKey := fmt.Sprintf("LatestID_%s", modelKey)
+
+	return ctx.GetStub().PutState(latestIDKey, []byte(strconv.Itoa(id)))
+}
+
+func (s *SmartContract) formatModelId(modelKey string, id int) (string, error) {
+	formattedID := fmt.Sprintf("%s%16d", modelKey, id)
 	return formattedID, nil
 }
