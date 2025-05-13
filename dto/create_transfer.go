@@ -1,6 +1,7 @@
 package dto
 
 type CreateTransfer struct {
-	OrganizationID string         `json:"organizationId"` // Organization ID
-	BatchAmounts   map[string]int `json:"batchAmounts"`   // Amount of drugs in the batch [ID, Amount]
+	SenderOrgID   string   `json:"SenderOrgID"`   // Sender organization ID
+	ReceiverOrgID string   `json:"ReceiverOrgID"` // Receiver organization ID
+	DrugsID       []string `json:"DrugsID"`       // List of drug IDs
 }
