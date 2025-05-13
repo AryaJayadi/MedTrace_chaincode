@@ -174,10 +174,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	var drugsIDs []string
 	for i := range createBatch.Amount {
 		currDrugInt := drugInt + i
-		drugID, err := s.formatModelId(ctx, drugKey, currDrugInt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to format drug ID: %v", err)
-		}
+		drugID := s.formatModelId(drugKey, currDrugInt)
 
 		drugID, err = s.CreateDrug(ctx, org.ID, batch.ID, drugID)
 		if err != nil {
@@ -322,10 +319,7 @@ func (s *SmartContract) generateModelId(ctx contractapi.TransactionContextInterf
 		return "", -1, fmt.Errorf("failed to store new latest ID: %v", err)
 	}
 
-	formattedID, err := s.formatModelId(modelKey, newIDNum)
-	if err != nil {
-		return "", -1, fmt.Errorf("failed to format model ID: %v", err)
-	}
+	formattedID := s.formatModelId(modelKey, newIDNum)
 	return formattedID, newIDNum, err
 }
 
@@ -335,7 +329,7 @@ func (s *SmartContract) saveModelId(ctx contractapi.TransactionContextInterface,
 	return ctx.GetStub().PutState(latestIDKey, []byte(strconv.Itoa(id)))
 }
 
-func (s *SmartContract) formatModelId(modelKey string, id int) (string, error) {
-	formattedID := fmt.Sprintf("%s%16d", modelKey, id)
-	return formattedID, nil
+func (s *SmartContract) formatModelId(modelKey string, id int) string {
+	formattedID := fmt.Sprintf("%s%016d", modelKey, id)
+	return formattedID
 }
