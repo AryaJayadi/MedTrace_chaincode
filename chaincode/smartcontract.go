@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -237,13 +238,12 @@ func (s *SmartContract) UpdateBatch(ctx contractapi.TransactionContextInterface,
 }
 
 func (s *SmartContract) getOrg(ctx contractapi.TransactionContextInterface) (*model.Organization, error) {
-	orgID, ok, err := cid.GetAttributeValue(ctx.GetStub(), "org.id")
+	mspID, err := cid.GetMSPID(ctx.GetStub())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get org.id attribute: %v", err)
+		return nil, fmt.Errorf("failed to get MSP ID: %v", err)
 	}
-	if !ok {
-		return nil, fmt.Errorf("org.id attribute not found")
-	}
+
+	orgID := strings.TrimSuffix(mspID, "MSP")
 
 	org, err := s.GetOrganization(ctx, orgID)
 	if err != nil {
