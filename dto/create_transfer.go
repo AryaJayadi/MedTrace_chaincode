@@ -1,7 +1,10 @@
 package dto
 
+import "time"
+
 type CreateTransfer struct {
-	SenderOrgID   string   `json:"SenderOrgID"`   // Sender organization ID
-	ReceiverOrgID string   `json:"ReceiverOrgID"` // Receiver organization ID
-	DrugsID       []string `json:"DrugsID"`       // List of drug IDs
+	DrugsID      []string  `json:"DrugsID"`      // List of drug IDs
+	ReceiverID   string    `json:"ReceiverID"`   // Receiver ID
+	SenderID     string    `json:"SenderID"`     // Sender ID
+	TransferDate time.Time `json:"TransferDate"` // Transfer date
 }
