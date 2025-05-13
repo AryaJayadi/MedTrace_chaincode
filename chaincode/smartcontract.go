@@ -119,6 +119,9 @@ func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterf
 	return &org, nil
 }
 
+func (s *SmartContract) CreateTransfer(ctx contractapi.TransactionContextInterface, req string) (*model.Transfer, error) {
+}
+
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
 	org, err := s.getOrg(ctx)
 	if err != nil {
