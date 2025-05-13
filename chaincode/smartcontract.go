@@ -122,28 +122,36 @@ func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterf
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
 	org, err := s.getOrg(ctx)
 	if err != nil {
+		fmt.Printf("error: failed to get organization ID: %v\n", err)
 		return nil, fmt.Errorf("failed to get organization ID: %v", err)
 	}
 	if org.Type != "Manufacturer" {
-		return nil, fmt.Errorf("only manufacturers can create batches")
+		err := fmt.Errorf("only manufacturers can create batches")
+		fmt.Printf("error: %v\n", err)
+		return nil, err
 	}
 
 	var createBatch dto.CreateBatch
 	err = json.Unmarshal([]byte(req), &createBatch)
 	if err != nil {
+		fmt.Printf("error: failed to unmarshal request: %v\n", err)
 		return nil, fmt.Errorf("failed to unmarshal request: %v", err)
 	}
 
 	exist, err := s.BatchExists(ctx, createBatch.ID)
 	if err != nil {
+		fmt.Printf("error: failed to check if batch exists: %v\n", err)
 		return nil, fmt.Errorf("failed to check if batch exists: %v", err)
 	}
 	if exist {
-		return nil, fmt.Errorf("batch with ID %s already exists", createBatch.ID)
+		err := fmt.Errorf("batch with ID %s already exists", createBatch.ID)
+		fmt.Printf("error: %v\n", err)
+		return nil, err
 	}
 
 	batchID, _, err := s.generateModelId(ctx, batchKey)
 	if err != nil {
+		fmt.Printf("error: failed to generate batch ID: %v\n", err)
 		return nil, fmt.Errorf("failed to generate batch ID: %v", err)
 	}
 
@@ -157,26 +165,30 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	}
 	batchJSON, err := json.Marshal(batch)
 	if err != nil {
+		fmt.Printf("error: failed to marshal batch: %v\n", err)
 		return nil, fmt.Errorf("failed to marshal batch: %v", err)
 	}
 
 	err = ctx.GetStub().PutState(batch.ID, batchJSON)
 	if err != nil {
+		fmt.Printf("error: failed to put batch to world state: %v\n", err)
 		return nil, fmt.Errorf("failed to put batch to world state: %v", err)
 	}
 
 	_, drugInt, err := s.generateModelId(ctx, drugKey)
 	if err != nil {
+		fmt.Printf("error: failed to generate drug ID: %v\n", err)
 		return nil, fmt.Errorf("failed to generate drug ID: %v", err)
 	}
 
 	var drugsIDs []string
-	for i := range createBatch.Amount {
+	for i := 0; i < createBatch.Amount; i++ {
 		currDrugInt := drugInt + i
 		drugID := s.formatModelId(drugKey, currDrugInt)
 
 		drugID, err = s.CreateDrug(ctx, org.ID, batch.ID, drugID)
 		if err != nil {
+			fmt.Printf("error: failed to create drug: %v\n", err)
 			return nil, fmt.Errorf("failed to create drug: %v", err)
 		}
 		drugsIDs = append(drugsIDs, drugID)
@@ -185,6 +197,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 
 	err = s.saveModelId(ctx, drugKey, (drugInt-1)+createBatch.Amount)
 	if err != nil {
+		fmt.Printf("error: failed to save drug ID: %v\n", err)
 		return nil, fmt.Errorf("failed to save drug ID: %v", err)
 	}
 
