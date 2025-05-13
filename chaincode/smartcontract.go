@@ -247,6 +247,31 @@ func (s *SmartContract) UpdateBatch(ctx contractapi.TransactionContextInterface,
 	return batch, nil
 }
 
+func (s *SmartContract) GetAllBatches(ctx contractapi.TransactionContextInterface) ([]*model.Batch, error) {
+	resIterator, err := ctx.GetStub().GetStateByRange(batchKey, batchKey+"~")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get batches: %v", err)
+	}
+	defer resIterator.Close()
+
+	var batches []*model.Batch
+	for resIterator.HasNext() {
+		res, err := resIterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate batches: %v", err)
+		}
+
+		var batch model.Batch
+		err = json.Unmarshal(res.Value, &batch)
+		if err != nil {
+			return nil, err
+		}
+		batches = append(batches, &batch)
+	}
+
+	return batches, nil
+}
+
 func (s *SmartContract) getOrg(ctx contractapi.TransactionContextInterface) (*model.Organization, error) {
 	mspID, err := cid.GetMSPID(ctx.GetStub())
 	if err != nil {
