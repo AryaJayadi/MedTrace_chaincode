@@ -3,6 +3,7 @@ package chaincode
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -17,6 +18,7 @@ const (
 	batchDrugIndex        = "batch~drug"
 	senderTransferIndex   = "sender~transfer"
 	receiverTransferIndex = "receiver~transfer"
+	transferDrugIndex     = "transfer~drug"
 )
 
 const (
@@ -137,6 +139,94 @@ func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterf
 	}
 
 	return &org, nil
+}
+
+func (s *SmartContract) CreateTransfer(ctx contractapi.TransactionContextInterface, req string) (*model.Transfer, error) {
+	org, err := s.getOrg(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var createTransfer dto.CreateTransfer
+	err = json.Unmarshal([]byte(req), &createTransfer)
+	if err != nil {
+		return nil, err
+	}
+
+	transferID, _, err := s.generateModelId(ctx, transferKey)
+	if err != nil {
+		return nil, err
+	}
+
+	isAccepted := false
+	transfer := model.Transfer{
+		ID:           &transferID,
+		IsAccepted:   &isAccepted,
+		ReceiveDate:  nil,
+		ReceiverID:   createTransfer.ReceiverID,
+		SenderID:     &org.ID,
+		TransferDate: createTransfer.TransferDate,
+	}
+	transferJSON, err := json.Marshal(transfer)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ctx.GetStub().PutState(transferID, transferJSON); err != nil {
+		return nil, err
+	}
+
+	value := []byte{0x00}
+	senderTransferIndexKey, err := ctx.GetStub().CreateCompositeKey(senderTransferIndex, []string{org.ID, transferID})
+	if err != nil {
+		return nil, err
+	}
+	receiverTransferIndexKey, err := ctx.GetStub().CreateCompositeKey(receiverTransferIndex, []string{*createTransfer.ReceiverID, transferID})
+	if err != nil {
+		return nil, err
+	}
+	if err := ctx.GetStub().PutState(senderTransferIndexKey, value); err != nil {
+		return nil, err
+	}
+	if err := ctx.GetStub().PutState(receiverTransferIndexKey, value); err != nil {
+		return nil, err
+	}
+
+	for _, drugID := range createTransfer.DrugsID {
+		drug, err := s.GetDrug(ctx, *drugID)
+		if err != nil {
+			return nil, err
+		}
+
+		if drug.IsTransferred {
+			return nil, fmt.Errorf("drug %s has already been transferred", *drugID)
+		}
+
+		if drug.OwnerID != org.ID {
+			return nil, fmt.Errorf("drug %s does not belong to the sender", *drugID)
+		}
+
+		drug.IsTransferred = true
+
+		drugJSON, err := json.Marshal(drug)
+		if err != nil {
+			return nil, err
+		}
+		if err := ctx.GetStub().PutState(*drugID, drugJSON); err != nil {
+			return nil, err
+		}
+
+		transferDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(transferDrugIndex, []string{transferID, *drugID})
+		if err != nil {
+			return nil, err
+		}
+		if err := ctx.GetStub().PutState(transferDrugIndexKey, value); err != nil {
+			return nil, err
+		}
+	}
+	log.Printf("Drugs transferred: %v\n", createTransfer.DrugsID)
+
+	return &transfer, nil
 }
 
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
