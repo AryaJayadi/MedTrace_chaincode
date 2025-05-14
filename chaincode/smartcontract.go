@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	ownerDrugIndex        = "owner~drug"
 	batchDrugIndex        = "batch~drug"
 	senderTransferIndex   = "sender~transfer"
 	receiverTransferIndex = "receiver~transfer"
@@ -72,6 +73,19 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	}
 
 	return nil
+}
+
+func (s *SmartContract) setDrugOwner(ctx contractapi.TransactionContextInterface, drugID string, ownerID string) (*string, error) {
+	value := []byte{0x00}
+	ownderDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(ownerDrugIndex, []string{ownerID, drugID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create composite key: %w", err)
+	}
+	if err := ctx.GetStub().PutState(ownderDrugIndexKey, value); err != nil {
+		return nil, fmt.Errorf("failed to put owner-drug index to world state: %w", err)
+	}
+
+	return &drugID, nil
 }
 
 func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, ownerID string, batchID string, drugID string) (string, error) {
