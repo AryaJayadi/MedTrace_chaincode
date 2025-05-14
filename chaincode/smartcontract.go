@@ -229,6 +229,23 @@ func (s *SmartContract) CreateTransfer(ctx contractapi.TransactionContextInterfa
 	return &transfer, nil
 }
 
+func (s *SmartContract) GetTransfer(ctx contractapi.TransactionContextInterface, id string) (*model.Transfer, error) {
+	transferJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from world state: %w", err)
+	}
+	if transferJSON == nil {
+		return nil, fmt.Errorf("transfer %s does not exist", id)
+	}
+
+	var transfer model.Transfer
+	if err := json.Unmarshal(transferJSON, &transfer); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal transfer: %w", err)
+	}
+
+	return &transfer, nil
+}
+
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
 	org, err := s.getOrg(ctx)
 	if err != nil {
