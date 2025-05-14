@@ -110,6 +110,11 @@ func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, 
 		return "", fmt.Errorf("failed to create composite key: %v", err)
 	}
 
+	_, err = s.setDrugOwner(ctx, drugID, ownerID)
+	if err != nil {
+		return "", fmt.Errorf("failed to set drug owner: %v", err)
+	}
+
 	value := []byte{0x00}
 	err = ctx.GetStub().PutState(batchDrugIndexKey, value)
 	if err != nil {
