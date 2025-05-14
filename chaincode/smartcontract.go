@@ -433,6 +433,9 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 			drug.TransferID = *transfer.ID
 
 			_, err = s.setDrugOwner(ctx, drug.ID, org.ID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set drug owner: %w", err)
+			}
 
 			drugJSOn, err := json.Marshal(drug)
 			if err != nil {
