@@ -14,7 +14,9 @@ import (
 )
 
 const (
-	batchDrugIndex = "batch~drug"
+	batchDrugIndex        = "batch~drug"
+	senderTransferIndex   = "sender~transfer"
+	receiverTransferIndex = "receiver~transfer"
 )
 
 const (
@@ -101,6 +103,24 @@ func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, 
 	return drugID, nil
 }
 
+func (s *SmartContract) GetDrug(ctx contractapi.TransactionContextInterface, drugID string) (*model.Drug, error) {
+	drugJSON, err := ctx.GetStub().GetState(drugID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from world state: %v", err)
+	}
+	if drugJSON == nil {
+		return nil, fmt.Errorf("drug %s does not exist", drugID)
+	}
+
+	var drug model.Drug
+	err = json.Unmarshal(drugJSON, &drug)
+	if err != nil {
+		return nil, err
+	}
+
+	return &drug, nil
+}
+
 func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterface, id string) (*model.Organization, error) {
 	orgJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
@@ -117,9 +137,6 @@ func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterf
 	}
 
 	return &org, nil
-}
-
-func (s *SmartContract) CreateTransfer(ctx contractapi.TransactionContextInterface, req string) (*model.Transfer, error) {
 }
 
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
@@ -139,17 +156,6 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	if err != nil {
 		fmt.Printf("error: failed to unmarshal request: %v\n", err)
 		return nil, fmt.Errorf("failed to unmarshal request: %v", err)
-	}
-
-	exist, err := s.BatchExists(ctx, createBatch.ID)
-	if err != nil {
-		fmt.Printf("error: failed to check if batch exists: %v\n", err)
-		return nil, fmt.Errorf("failed to check if batch exists: %v", err)
-	}
-	if exist {
-		err := fmt.Errorf("batch with ID %s already exists", createBatch.ID)
-		fmt.Printf("error: %v\n", err)
-		return nil, err
 	}
 
 	batchID, _, err := s.generateModelId(ctx, batchKey)
