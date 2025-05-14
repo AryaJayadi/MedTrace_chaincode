@@ -281,7 +281,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	}
 
 	var drugsIDs []string
-	for i := 0; i < createBatch.Amount; i++ {
+	for i := range createBatch.Amount {
 		currDrugInt := drugInt + i
 		drugID := s.formatModelId(drugKey, currDrugInt)
 
