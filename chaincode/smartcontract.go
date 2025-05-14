@@ -370,24 +370,33 @@ func (s *SmartContract) getMyTransfer(ctx contractapi.TransactionContextInterfac
 	return transfers, nil
 }
 
-func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterface, req string) (*model.Transfer, error) {
+func (s *SmartContract) validateProcessTransfer(ctx contractapi.TransactionContextInterface, req string) (*model.Transfer, *dto.ProcessTransfer, error) {
 	org, err := s.getOrg(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get organization ID: %w", err)
+		return nil, nil, fmt.Errorf("failed to get organization ID: %w", err)
 	}
 
 	var processTransfer dto.ProcessTransfer
 	if err := json.Unmarshal([]byte(req), &processTransfer); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal request: %w", err)
+		return nil, nil, fmt.Errorf("failed to unmarshal request: %w", err)
 	}
 
 	transfer, err := s.GetTransfer(ctx, processTransfer.TransferID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transfer: %w", err)
+		return nil, nil, fmt.Errorf("failed to get transfer: %w", err)
 	}
 
 	if org.ID != *transfer.ReceiverID {
-		return nil, fmt.Errorf("only the receiver can accept the transfer")
+		return nil, nil, fmt.Errorf("only the receiver can accept the transfer")
+	}
+
+	return transfer, &processTransfer, nil
+}
+
+func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterface, req string) (*model.Transfer, error) {
+	transfer, processTransfer, err := s.validateProcessTransfer(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate process transfer: %w", err)
 	}
 
 	isAccepted := true
