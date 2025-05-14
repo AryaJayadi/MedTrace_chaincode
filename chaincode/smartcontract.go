@@ -246,6 +246,51 @@ func (s *SmartContract) GetTransfer(ctx contractapi.TransactionContextInterface,
 	return &transfer, nil
 }
 
+func (s *SmartContract) getMyTransfer(ctx contractapi.TransactionContextInterface, isIn bool) ([]*model.Transfer, error) {
+	org, err := s.getOrg(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization ID: %w", err)
+	}
+
+	var transferIndex string
+	if isIn {
+		transferIndex = receiverTransferIndex
+	} else {
+		transferIndex = senderTransferIndex
+	}
+
+	transferredDrugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(transferIndex, []string{org.ID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transferred drugs: %w", err)
+	}
+	defer transferredDrugsIterator.Close()
+
+	var transfers []*model.Transfer
+	for transferredDrugsIterator.HasNext() {
+		responseRange, err := transferredDrugsIterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate transferred drugs: %w", err)
+		}
+
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(responseRange.Key)
+		if err != nil {
+			return nil, fmt.Errorf("failed to split composite key: %w", err)
+		}
+
+		if len(compositeKeyParts) > 1 {
+			returnedTransferID := compositeKeyParts[1]
+			transfer, err := s.GetTransfer(ctx, returnedTransferID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get transfer: %w", err)
+			}
+
+			transfers = append(transfers, transfer)
+		}
+	}
+
+	return transfers, nil
+}
+
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
 	org, err := s.getOrg(ctx)
 	if err != nil {
