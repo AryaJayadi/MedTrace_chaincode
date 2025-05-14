@@ -142,6 +142,44 @@ func (s *SmartContract) GetDrug(ctx contractapi.TransactionContextInterface, dru
 	return &drug, nil
 }
 
+func (s *SmartContract) GetMyDrug(ctx contractapi.TransactionContextInterface) ([]*model.Drug, error) {
+	org, err := s.getOrg(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization ID: %w", err)
+	}
+
+	drugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(ownerDrugIndex, []string{org.ID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get drugs: %w", err)
+	}
+	defer drugsIterator.Close()
+
+	var drugs []*model.Drug
+	for drugsIterator.HasNext() {
+		responseRange, err := drugsIterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate drugs: %w", err)
+		}
+
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(responseRange.Key)
+		if err != nil {
+			return nil, fmt.Errorf("failed to split composite key: %w", err)
+		}
+
+		if len(compositeKeyParts) > 1 {
+			returnedDrugID := compositeKeyParts[1]
+			drug, err := s.GetDrug(ctx, returnedDrugID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get drug: %w", err)
+			}
+
+			drugs = append(drugs, drug)
+		}
+	}
+
+	return drugs, nil
+}
+
 func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterface, id string) (*model.Organization, error) {
 	orgJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
