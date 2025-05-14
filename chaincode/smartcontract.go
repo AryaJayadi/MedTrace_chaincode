@@ -463,6 +463,60 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 	return transfer, nil
 }
 
+func (s *SmartContract) RejectTransfer(ctx contractapi.TransactionContextInterface, req string) (*model.Transfer, error) {
+	transfer, _, _, err := s.validateProcessTransfer(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate process transfer: %w", err)
+	}
+
+	isAccepted := false
+	transfer.IsAccepted = &isAccepted
+	transfer.ReceiveDate = nil
+
+	transferDrugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(transferDrugIndex, []string{*transfer.ID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transferred drugs: %w", err)
+	}
+	defer transferDrugsIterator.Close()
+
+	var drugsIDs []string
+	for transferDrugsIterator.HasNext() {
+		responseRange, err := transferDrugsIterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate transferred drugs: %w", err)
+		}
+
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(responseRange.Key)
+		if err != nil {
+			return nil, fmt.Errorf("failed to split composite key: %w", err)
+		}
+
+		if len(compositeKeyParts) > 1 {
+			returnedDrugID := compositeKeyParts[1]
+			drug, err := s.GetDrug(ctx, returnedDrugID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get drug: %w", err)
+			}
+
+			drug.IsTransferred = false
+
+			drugJSON, err := json.Marshal(drug)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal drug: %w", err)
+			}
+
+			if err := ctx.GetStub().PutState(drug.ID, drugJSON); err != nil {
+				return nil, fmt.Errorf("failed to put drug to world state: %w", err)
+			}
+
+			drugsIDs = append(drugsIDs, drug.ID)
+		}
+	}
+	log.Printf("Drugs rejected: %v\n", drugsIDs)
+
+	return transfer, nil
+}
+
 func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
 	org, err := s.getOrg(ctx)
 	if err != nil {
