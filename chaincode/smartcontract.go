@@ -246,6 +246,28 @@ func (s *SmartContract) GetTransfer(ctx contractapi.TransactionContextInterface,
 	return &transfer, nil
 }
 
+func (s *SmartContract) GetMyOutTransfer(ctx contractapi.TransactionContextInterface) ([]*model.Transfer, error) {
+	return s.getMyTransfer(ctx, false)
+}
+
+func (s *SmartContract) GetMyInTransfer(ctx contractapi.TransactionContextInterface) ([]*model.Transfer, error) {
+	return s.getMyTransfer(ctx, true)
+}
+
+func (s *SmartContract) GetMyTransfers(ctx contractapi.TransactionContextInterface) ([]*model.Transfer, error) {
+	outTransfers, err := s.getMyTransfer(ctx, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get out transfers: %w", err)
+	}
+
+	inTransfers, err := s.getMyTransfer(ctx, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get in transfers: %w", err)
+	}
+
+	return append(outTransfers, inTransfers...), nil
+}
+
 func (s *SmartContract) getMyTransfer(ctx contractapi.TransactionContextInterface, isIn bool) ([]*model.Transfer, error) {
 	org, err := s.getOrg(ctx)
 	if err != nil {
