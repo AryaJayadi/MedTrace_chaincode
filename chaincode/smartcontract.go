@@ -217,12 +217,12 @@ func (s *SmartContract) CreateTransfer(ctx contractapi.TransactionContextInterfa
 
 	isAccepted := false
 	transfer := model.Transfer{
-		ID:           &transferID,
-		IsAccepted:   &isAccepted,
-		ReceiveDate:  nil,
-		ReceiverID:   createTransfer.ReceiverID,
-		SenderID:     &org.ID,
-		TransferDate: createTransfer.TransferDate,
+		ID:         transferID,
+		IsAccepted: isAccepted,
+		// ReceiveDate:  nil,
+		ReceiverID:   *createTransfer.ReceiverID,
+		SenderID:     org.ID,
+		TransferDate: *createTransfer.TransferDate,
 	}
 	transferJSON, err := json.Marshal(transfer)
 	if err != nil {
@@ -386,7 +386,7 @@ func (s *SmartContract) validateProcessTransfer(ctx contractapi.TransactionConte
 		return nil, nil, nil, fmt.Errorf("failed to get transfer: %w", err)
 	}
 
-	if org.ID != *transfer.ReceiverID {
+	if org.ID != transfer.ReceiverID {
 		return nil, nil, nil, fmt.Errorf("only the receiver can accept the transfer")
 	}
 
@@ -400,19 +400,19 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 	}
 
 	isAccepted := true
-	transfer.IsAccepted = &isAccepted
-	transfer.ReceiveDate = processTransfer.ReceiveDate
+	transfer.IsAccepted = isAccepted
+	transfer.ReceiveDate = *processTransfer.ReceiveDate
 
 	transferJSON, err := json.Marshal(transfer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal transfer: %w", err)
 	}
 
-	if err := ctx.GetStub().PutState(*transfer.ID, transferJSON); err != nil {
+	if err := ctx.GetStub().PutState(transfer.ID, transferJSON); err != nil {
 		return nil, fmt.Errorf("failed to put transfer to world state: %w", err)
 	}
 
-	transferDrugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(transferDrugIndex, []string{*transfer.ID})
+	transferDrugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(transferDrugIndex, []string{transfer.ID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transferred drugs: %w", err)
 	}
@@ -439,7 +439,7 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 
 			drug.IsTransferred = false
 			drug.OwnerID = org.ID
-			drug.TransferID = *transfer.ID
+			drug.TransferID = transfer.ID
 
 			_, err = s.setDrugOwner(ctx, drug.ID, org.ID)
 			if err != nil {
@@ -470,10 +470,10 @@ func (s *SmartContract) RejectTransfer(ctx contractapi.TransactionContextInterfa
 	}
 
 	isAccepted := false
-	transfer.IsAccepted = &isAccepted
-	transfer.ReceiveDate = nil
+	transfer.IsAccepted = isAccepted
+	// transfer.ReceiveDate = nil
 
-	transferDrugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(transferDrugIndex, []string{*transfer.ID})
+	transferDrugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(transferDrugIndex, []string{transfer.ID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transferred drugs: %w", err)
 	}
