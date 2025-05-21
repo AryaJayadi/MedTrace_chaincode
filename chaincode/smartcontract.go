@@ -653,7 +653,7 @@ func (s *SmartContract) GetAllBatches(ctx contractapi.TransactionContextInterfac
 	}
 	defer resIterator.Close()
 
-	var batches []*model.Batch
+	batches := make([]*model.Batch, 0)
 	for resIterator.HasNext() {
 		res, err := resIterator.Next()
 		if err != nil {
@@ -693,7 +693,7 @@ func (s *SmartContract) GetAllOrganizations(ctx contractapi.TransactionContextIn
 	}
 	defer resIterator.Close()
 
-	var orgs []*model.Organization
+	orgs := make([]*model.Organization, 0)
 	for resIterator.HasNext() {
 		res, err := resIterator.Next()
 		if err != nil {
