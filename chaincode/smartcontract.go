@@ -377,7 +377,7 @@ func (s *SmartContract) getMyTransfer(ctx contractapi.TransactionContextInterfac
 	}
 	defer transferredDrugsIterator.Close()
 
-	var transfers []*model.Transfer
+	transfers := make([]*model.Transfer, 0)
 	for transferredDrugsIterator.HasNext() {
 		responseRange, err := transferredDrugsIterator.Next()
 		if err != nil {
