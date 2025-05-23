@@ -142,7 +142,9 @@ func (s *SmartContract) GetDrug(ctx contractapi.TransactionContextInterface, dru
 	return &drug, nil
 }
 
-func (s *SmartContract) GetMyDrug(ctx contractapi.TransactionContextInterface) ([]*model.Drug, error) {
+type drugFilter func(drug *model.Drug, org *model.Organization) bool
+
+func (s *SmartContract) getFilteredDrugs(ctx contractapi.TransactionContextInterface, filter drugFilter) ([]*model.Drug, error) {
 	org, err := s.getOrg(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get organization ID: %w", err)
@@ -173,11 +175,25 @@ func (s *SmartContract) GetMyDrug(ctx contractapi.TransactionContextInterface) (
 				return nil, fmt.Errorf("failed to get drug: %w", err)
 			}
 
-			drugs = append(drugs, drug)
+			if filter(drug, org) {
+				drugs = append(drugs, drug)
+			}
 		}
 	}
 
 	return drugs, nil
+}
+
+func (s *SmartContract) GetMyDrug(ctx contractapi.TransactionContextInterface) ([]*model.Drug, error) {
+	return s.getFilteredDrugs(ctx, func(drug *model.Drug, org *model.Organization) bool {
+		return true
+	})
+}
+
+func (s *SmartContract) GetMyAvailDrugs(ctx contractapi.TransactionContextInterface) ([]*model.Drug, error) {
+	return s.getFilteredDrugs(ctx, func(drug *model.Drug, org *model.Organization) bool {
+		return !drug.IsTransferred
+	})
 }
 
 func (s *SmartContract) GetDrugByBatch(ctx contractapi.TransactionContextInterface, batchID string) ([]*model.Drug, error) {
@@ -207,46 +223,6 @@ func (s *SmartContract) GetDrugByBatch(ctx contractapi.TransactionContextInterfa
 			}
 
 			drugs = append(drugs, drug)
-		}
-	}
-
-	return drugs, nil
-}
-
-func (s *SmartContract) GetMyAvailDrugs(ctx contractapi.TransactionContextInterface) ([]*model.Drug, error) {
-	org, err := s.getOrg(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get organization ID: %w", err)
-	}
-
-	drugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(ownerDrugIndex, []string{org.ID})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get drugs: %w", err)
-	}
-	defer drugsIterator.Close()
-
-	drugs := make([]*model.Drug, 0)
-	for drugsIterator.HasNext() {
-		responseRange, err := drugsIterator.Next()
-		if err != nil {
-			return nil, fmt.Errorf("failed to iterate drugs: %w", err)
-		}
-
-		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(responseRange.Key)
-		if err != nil {
-			return nil, fmt.Errorf("failed to split composite key: %w", err)
-		}
-
-		if len(compositeKeyParts) > 1 {
-			returnedDrugID := compositeKeyParts[1]
-			drug, err := s.GetDrug(ctx, returnedDrugID)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get drug: %w", err)
-			}
-
-			if drug.OwnerID == org.ID && !drug.IsTransferred {
-				drugs = append(drugs, drug)
-			}
 		}
 	}
 
