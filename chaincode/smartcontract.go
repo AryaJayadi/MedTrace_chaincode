@@ -806,3 +806,43 @@ func (s *SmartContract) formatModelId(modelKey string, id int) string {
 	formattedID := fmt.Sprintf("%s%016d", modelKey, id)
 	return formattedID
 }
+
+func (s *SmartContract) GetHistoryDrug(ctx contractapi.TransactionContextInterface, drugID string) ([]*model.HistoryDrug, error) {
+	log.Printf("Getting history for drug: %s\n", drugID)
+
+	resultIterator, err := ctx.GetStub().GetHistoryForKey(drugID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get history for drug %s: %v", drugID, err)
+	}
+	defer resultIterator.Close()
+
+	records := make([]*model.HistoryDrug, 0)
+	for resultIterator.HasNext() {
+		response, err := resultIterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate history for drug %s: %v", drugID, err)
+		}
+
+		var drug model.Drug
+		if len(response.Value) > 0 {
+			err := json.Unmarshal(response.Value, &drug)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal drug: %v", err)
+			}
+		} else {
+			drug = model.Drug{
+				ID: drugID,
+			}
+		}
+
+		record := model.HistoryDrug{
+			TxId:      response.TxId,
+			Timestamp: response.Timestamp.AsTime(),
+			Drug:      &drug,
+			IsDelete:  response.IsDelete,
+		}
+		records = append(records, &record)
+	}
+
+	return records, nil
+}
