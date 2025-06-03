@@ -109,6 +109,10 @@ func (s *SmartContract) updateDrugTransfer(ctx contractapi.TransactionContextInt
 		return nil, fmt.Errorf("failed to delete old transfer-drug index from world state: %w", err)
 	}
 
+	if transferID == "" {
+		return &drug.ID, nil
+	}
+
 	drug.TransferID = transferID
 
 	value := []byte{0x00}
@@ -588,6 +592,11 @@ func (s *SmartContract) RejectTransfer(ctx contractapi.TransactionContextInterfa
 			}
 
 			drug.IsTransferred = false
+
+			_, err = s.updateDrugTransfer(ctx, drug, "")
+			if err != nil {
+				return nil, fmt.Errorf("failed to remove drug transfer ID: %w", err)
+			}
 
 			drugJSON, err := json.Marshal(drug)
 			if err != nil {
