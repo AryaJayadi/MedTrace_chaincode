@@ -75,9 +75,20 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	return nil
 }
 
-func (s *SmartContract) setDrugOwner(ctx contractapi.TransactionContextInterface, drugID string, ownerID string) (*string, error) {
+func (s *SmartContract) setDrugOwner(ctx contractapi.TransactionContextInterface, drug *model.Drug, newOwnerID string) (*string, error) {
+	ownerIndexKey, err := ctx.GetStub().CreateCompositeKey(ownerDrugIndex, []string{drug.OwnerID, drug.ID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create composite key: %w", err)
+	}
+
+	if err := ctx.GetStub().DelState(ownerIndexKey); err != nil {
+		return nil, fmt.Errorf("failed to delete old owner-drug index from world state: %w", err)
+	}
+
+	drug.OwnerID = newOwnerID
+
 	value := []byte{0x00}
-	ownderDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(ownerDrugIndex, []string{ownerID, drugID})
+	ownderDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(ownerDrugIndex, []string{newOwnerID, drug.ID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create composite key: %w", err)
 	}
@@ -85,7 +96,7 @@ func (s *SmartContract) setDrugOwner(ctx contractapi.TransactionContextInterface
 		return nil, fmt.Errorf("failed to put owner-drug index to world state: %w", err)
 	}
 
-	return &drugID, nil
+	return &drug.ID, nil
 }
 
 func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, ownerID string, batchID string, drugID string) (string, error) {
@@ -487,10 +498,9 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 			}
 
 			drug.IsTransferred = false
-			drug.OwnerID = org.ID
 			drug.TransferID = transfer.ID
 
-			_, err = s.setDrugOwner(ctx, drug.ID, org.ID)
+			_, err = s.setDrugOwner(ctx, drug, org.ID)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set drug owner: %w", err)
 			}
