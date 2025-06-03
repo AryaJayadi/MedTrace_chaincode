@@ -88,12 +88,36 @@ func (s *SmartContract) updateDrugOwner(ctx contractapi.TransactionContextInterf
 	drug.OwnerID = newOwnerID
 
 	value := []byte{0x00}
-	ownderDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(ownerDrugIndex, []string{newOwnerID, drug.ID})
+	ownerDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(ownerDrugIndex, []string{newOwnerID, drug.ID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create composite key: %w", err)
 	}
-	if err := ctx.GetStub().PutState(ownderDrugIndexKey, value); err != nil {
+	if err := ctx.GetStub().PutState(ownerDrugIndexKey, value); err != nil {
 		return nil, fmt.Errorf("failed to put owner-drug index to world state: %w", err)
+	}
+
+	return &drug.ID, nil
+}
+
+func (s *SmartContract) updateDrugTransfer(ctx contractapi.TransactionContextInterface, drug *model.Drug, transferID string) (*string, error) {
+	transferDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(transferDrugIndex, []string{drug.TransferID, drug.ID})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ctx.GetStub().DelState(transferDrugIndexKey); err != nil {
+		return nil, fmt.Errorf("failed to delete old transfer-drug index from world state: %w", err)
+	}
+
+	drug.TransferID = transferID
+
+	value := []byte{0x00}
+	transferDrugIndexKey, err = ctx.GetStub().CreateCompositeKey(transferDrugIndex, []string{transferID, drug.ID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create composite key: %w", err)
+	}
+	if err := ctx.GetStub().PutState(transferDrugIndexKey, value); err != nil {
+		return nil, fmt.Errorf("failed to put transfer-drug index to world state: %w", err)
 	}
 
 	return &drug.ID, nil
@@ -500,11 +524,15 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 			}
 
 			drug.IsTransferred = false
-			drug.TransferID = transfer.ID
 
 			_, err = s.updateDrugOwner(ctx, drug, org.ID)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set drug owner: %w", err)
+			}
+
+			_, err = s.updateDrugTransfer(ctx, drug, transfer.ID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set drug transfer ID: %w", err)
 			}
 
 			drugJSOn, err := json.Marshal(drug)
