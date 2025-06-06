@@ -127,11 +127,12 @@ func (s *SmartContract) updateDrugTransfer(ctx contractapi.TransactionContextInt
 	return &drug.ID, nil
 }
 
-func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, ownerID string, batchID string, drugID string) (string, error) {
+func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, org *model.Organization, batchID string, drugID string) (string, error) {
 	drug := model.Drug{
-		BatchID: batchID,
-		ID:      drugID,
-		OwnerID: ownerID,
+		BatchID:  batchID,
+		ID:       drugID,
+		Location: org.Location,
+		OwnerID:  org.ID,
 	}
 
 	drugJSON, err := json.Marshal(drug)
@@ -148,7 +149,7 @@ func (s *SmartContract) CreateDrug(ctx contractapi.TransactionContextInterface, 
 	if err != nil {
 		return "", fmt.Errorf("failed to create composite key: %v", err)
 	}
-	ownderDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(ownerDrugIndex, []string{ownerID, drug.ID})
+	ownderDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(ownerDrugIndex, []string{org.ID, drug.ID})
 	if err != nil {
 		return "", fmt.Errorf("failed to create composite key: %w", err)
 	}
@@ -528,6 +529,7 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 			}
 
 			drug.IsTransferred = false
+			drug.Location = org.Location
 
 			_, err = s.updateDrugOwner(ctx, drug, org.ID)
 			if err != nil {
@@ -671,7 +673,7 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 		currDrugInt := drugInt + i
 		drugID := s.formatModelId(drugKey, currDrugInt)
 
-		drugID, err = s.CreateDrug(ctx, org.ID, batch.ID, drugID)
+		drugID, err = s.CreateDrug(ctx, org, batch.ID, drugID)
 		if err != nil {
 			fmt.Printf("error: failed to create drug: %v\n", err)
 			return nil, fmt.Errorf("failed to create drug: %v", err)
