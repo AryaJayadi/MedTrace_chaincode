@@ -559,14 +559,14 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 }
 
 func (s *SmartContract) RejectTransfer(ctx contractapi.TransactionContextInterface, req string) (*model.Transfer, error) {
-	transfer, _, _, err := s.validateProcessTransfer(ctx, req)
+	transfer, _, processTransfer, err := s.validateProcessTransfer(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate process transfer: %w", err)
 	}
 
 	isAccepted := false
 	transfer.IsAccepted = isAccepted
-	// transfer.ReceiveDate = nil
+	transfer.ReceiveDate = *processTransfer.ReceiveDate
 
 	transferDrugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(transferDrugIndex, []string{transfer.ID})
 	if err != nil {
