@@ -100,14 +100,14 @@ func (s *SmartContract) updateDrugOwner(ctx contractapi.TransactionContextInterf
 }
 
 func (s *SmartContract) updateDrugTransfer(ctx contractapi.TransactionContextInterface, drug *model.Drug, transferID string) (*string, error) {
-	transferDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(transferDrugIndex, []string{drug.TransferID, drug.ID})
-	if err != nil {
-		return nil, err
-	}
+	// transferDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(transferDrugIndex, []string{drug.TransferID, drug.ID})
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	if err := ctx.GetStub().DelState(transferDrugIndexKey); err != nil {
-		return nil, fmt.Errorf("failed to delete old transfer-drug index from world state: %w", err)
-	}
+	// if err := ctx.GetStub().DelState(transferDrugIndexKey); err != nil {
+	// 	return nil, fmt.Errorf("failed to delete old transfer-drug index from world state: %w", err)
+	// }
 
 	if transferID == "" {
 		return &drug.ID, nil
@@ -116,7 +116,7 @@ func (s *SmartContract) updateDrugTransfer(ctx contractapi.TransactionContextInt
 	drug.TransferID = transferID
 
 	value := []byte{0x00}
-	transferDrugIndexKey, err = ctx.GetStub().CreateCompositeKey(transferDrugIndex, []string{transferID, drug.ID})
+	transferDrugIndexKey, err := ctx.GetStub().CreateCompositeKey(transferDrugIndex, []string{transferID, drug.ID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create composite key: %w", err)
 	}
