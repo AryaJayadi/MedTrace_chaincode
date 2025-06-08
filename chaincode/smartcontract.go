@@ -494,15 +494,6 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 	transfer.IsAccepted = isAccepted
 	transfer.ReceiveDate = *processTransfer.ReceiveDate
 
-	transferJSON, err := json.Marshal(transfer)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal transfer: %w", err)
-	}
-
-	if err := ctx.GetStub().PutState(transfer.ID, transferJSON); err != nil {
-		return nil, fmt.Errorf("failed to put transfer to world state: %w", err)
-	}
-
 	transferDrugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(transferDrugIndex, []string{transfer.ID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transferred drugs: %w", err)
@@ -554,6 +545,15 @@ func (s *SmartContract) AcceptTransfer(ctx contractapi.TransactionContextInterfa
 		}
 	}
 	log.Printf("Drugs accepted: %v\n", drugsIDs)
+
+	transferJSON, err := json.Marshal(transfer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal transfer: %w", err)
+	}
+
+	if err := ctx.GetStub().PutState(transfer.ID, transferJSON); err != nil {
+		return nil, fmt.Errorf("failed to put transfer to world state: %w", err)
+	}
 
 	return transfer, nil
 }
@@ -613,6 +613,15 @@ func (s *SmartContract) RejectTransfer(ctx contractapi.TransactionContextInterfa
 		}
 	}
 	log.Printf("Drugs rejected: %v\n", drugsIDs)
+
+	transferJSON, err := json.Marshal(transfer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal transfer: %w", err)
+	}
+
+	if err := ctx.GetStub().PutState(transfer.ID, transferJSON); err != nil {
+		return nil, fmt.Errorf("failed to put transfer to world state: %w", err)
+	}
 
 	return transfer, nil
 }
