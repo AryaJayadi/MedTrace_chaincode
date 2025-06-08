@@ -709,7 +709,7 @@ func (s *SmartContract) GetBatch(ctx contractapi.TransactionContextInterface, id
 	return &batch, nil
 }
 
-func (s *SmartContract) UpdateBatch(ctx contractapi.TransactionContextInterface, req string) (*model.Batch, error) {
+func (s *SmartContract) UpdateBatch(ctx contractapi.TransactionContextInterface, batchID string, req string) (*model.Batch, error) {
 	org, err := s.getOrg(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get organization ID: %v", err)
@@ -724,7 +724,7 @@ func (s *SmartContract) UpdateBatch(ctx contractapi.TransactionContextInterface,
 		return nil, fmt.Errorf("failed to unmarshal request: %v", err)
 	}
 
-	batch, err := s.GetBatch(ctx, updateBatch.ID)
+	batch, err := s.GetBatch(ctx, batchID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get batch: %v", err)
 	}
