@@ -271,6 +271,39 @@ func (s *SmartContract) GetDrugByBatch(ctx contractapi.TransactionContextInterfa
 	return drugs, nil
 }
 
+func (s *SmartContract) GetDrugByTransfer(ctx contractapi.TransactionContextInterface, transferID string) ([]*model.Drug, error) {
+	drugsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(transferDrugIndex, []string{transferID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get drugs: %w", err)
+	}
+	defer drugsIterator.Close()
+
+	drugs := make([]*model.Drug, 0)
+	for drugsIterator.HasNext() {
+		responseRange, err := drugsIterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate drugs: %w", err)
+		}
+
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(responseRange.Key)
+		if err != nil {
+			return nil, fmt.Errorf("failed to split composite key: %w", err)
+		}
+
+		if len(compositeKeyParts) > 1 {
+			returnedDrugID := compositeKeyParts[1]
+			drug, err := s.GetDrug(ctx, returnedDrugID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get drug: %w", err)
+			}
+
+			drugs = append(drugs, drug)
+		}
+	}
+
+	return drugs, nil
+}
+
 func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterface, id string) (*model.Organization, error) {
 	orgJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
